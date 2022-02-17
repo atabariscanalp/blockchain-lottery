@@ -4,6 +4,12 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
+import {
+  FEE,
+  MUMBAI_KEY_HASH,
+  MUMBAI_LINK,
+  MUMBAI_VRFCOORDINATOR,
+} from "./constants";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -14,12 +20,32 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const Greeter = await ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  const Governance = await ethers.getContractFactory("Governance");
+  const Duello = await ethers.getContractFactory("Duel");
+  const Lottery = await ethers.getContractFactory("Lottery");
+  const RandomGenerator = await ethers.getContractFactory(
+    "RandomNumberGenerator"
+  );
 
-  await greeter.deployed();
+  const governance = await Governance.deploy();
+  await governance.deployed();
+  const duello = await Duello.deploy(governance.address);
+  await duello.deployed();
+  const lottery = await Lottery.deploy(10, governance.address);
+  await lottery.deployed();
+  const randomGenerator = await RandomGenerator.deploy(
+    MUMBAI_VRFCOORDINATOR,
+    MUMBAI_LINK,
+    FEE,
+    MUMBAI_KEY_HASH,
+    governance.address
+  );
+  await randomGenerator.deployed();
 
-  console.log("Greeter deployed to:", greeter.address);
+  console.log("Governance deployed to:", governance.address);
+  console.log("Duello deployed to:", duello.address);
+  console.log("Lottery deployed to:", lottery.address);
+  console.log("RandomGenerator deployed to:", randomGenerator.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

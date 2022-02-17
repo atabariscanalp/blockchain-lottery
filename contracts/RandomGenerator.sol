@@ -16,16 +16,16 @@ contract RandomNumberGenerator is VRFConsumerBase {
 
     GovernanceInterface public governance;
 
-    event RequestedRandomness(requestId);
+    event RequestedRandomness(bytes32 requestId);
+    event FulfilledRandomness();
 
     constructor(
         address _vrfCoordinator,
         address _link,
-        uint256 _fee,
         bytes32 _keyhash,
         address _governance
-    ) public VRFConsumerBase(_vrfCoordinator, _link) {
-        fee = _fee;
+    ) VRFConsumerBase(_vrfCoordinator, _link) {
+        fee = 0.1 * 10**18;
         keyhash = _keyhash;
         governance = GovernanceInterface(_governance);
     }
@@ -33,7 +33,7 @@ contract RandomNumberGenerator is VRFConsumerBase {
     /**
      *	Requests randomness to VRFCoordinator
      */
-    function getRandom() internal returns (bytes32 requestId) {
+    function getRandom() external returns (bytes32 requestId) {
         require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK");
         require(keyhash != bytes32(0), "Must have a valid keyhash!");
 
@@ -47,7 +47,7 @@ contract RandomNumberGenerator is VRFConsumerBase {
      *	Requests randomness to VRFCoordinator
      *	Overloads getRandom function to work with Duello Contract
      */
-    function getRandom(bytes32 _roomId) internal returns (bytes32 requestId) {
+    function getRandom(bytes32 _roomId) external returns (bytes32 requestId) {
         require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK");
         require(keyhash != bytes32(0), "Must have a valid keyhash!");
 
@@ -65,9 +65,10 @@ contract RandomNumberGenerator is VRFConsumerBase {
         override
     {
         require(_randomness > 0, "random not found");
-        require(msg.sender == vrfCoordinator, "Fulfillment only not permitted");
 
         mostRecentRandomness = _randomness;
+
+        emit FulfilledRandomness();
 
         bool isLottery = requestIds[_requestId] == "";
 

@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy-lottery": "hh run scripts/lottery/lottery_deploy.ts --network kovan",
+    "start-lottery": "hh run scripts/lottery/lottery_start.ts --network kovan",
+    "test-lottery": "hh run scripts/lottery/lottery_test.ts --network kovan"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +28,7 @@
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-config-standard": "^16.0.3",
+    "eslint-import-resolver-typescript": "^2.5.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^3.4.1",
@@ -40,5 +44,8 @@
     "ts-node": "^10.4.0",
     "typechain": "^5.2.0",
     "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.3.1"
   }
 }
