@@ -10,8 +10,9 @@ import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
 contract Lottery is KeeperCompatibleInterface {
     address payable[] public players;
     address payable[] public winners;
+    address payable public latestWinner;
 
-    uint256 public ticketPrice;
+    uint256 private ticketPrice;
     uint256 public lotteryId;
 
     uint256 public immutable interval;
@@ -28,38 +29,56 @@ contract Lottery is KeeperCompatibleInterface {
 
     // Events
     event BuyTicket(address sender);
+    event CalculatingWinner();
     event EndLottery(uint256 randomness);
     event StartLottery();
+    event CheckUpkeep(bool val);
+    event ForceEnd(int256 val);
 
-    constructor(uint256 _interval, address _governance) public {
+    constructor(uint256 _interval, address _governance) {
         interval = _interval;
         governance = GovernanceInterface(_governance);
 
         lotteryId = 1;
         lotteryState = LotteryState.CLOSED;
         // TODO: Change the ticketPrice later
-        ticketPrice = 1000000000000000; // 0.1 ETH
+        ticketPrice = 0.005 ether; // 0.005 ETH
     }
 
-    function checkUpkeep(bytes calldata)
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
         external
         override
-        returns (bool upkeepNeeded, bytes memory)
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
     {
         upkeepNeeded =
-            (block.timestamp - lastTimeStamp) > interval &&
+            ((block.timestamp - lastTimeStamp) > interval) &&
             lotteryState == LotteryState.OPEN;
+
+        emit CheckUpkeep(upkeepNeeded);
     }
 
-    function performUpkeep(bytes calldata) external override {
+    function performUpkeep(
+        bytes calldata /* performData */
+    ) external override {
         lastTimeStamp = block.timestamp;
         lotteryId++;
         lotteryState = LotteryState.CALCULATING_WINNER;
 
-        pickWinner();
+        if (players.length == 0) {
+            lotteryState = LotteryState.CLOSED;
+            emit EndLottery(0);
+        } else {
+            emit CalculatingWinner();
+            pickWinner();
+        }
     }
 
-    function checkPlayerHasJoined(address payable _user) private {
+    function checkPlayerHasJoined(address _user) private view returns (bool) {
         for (uint256 i = 0; i < players.length; i++) {
             if (players[i] == _user) {
                 return false;
@@ -101,6 +120,12 @@ contract Lottery is KeeperCompatibleInterface {
         RandomnessInterface(governance.randomness()).getRandom();
     }
 
+    function forceEndLottery() public {
+        lotteryState = LotteryState.CLOSED;
+        players = new address payable[](0);
+        emit ForceEnd(-1);
+    }
+
     function endLottery(uint256 _randomness) public {
         require(
             lotteryState == LotteryState.CALCULATING_WINNER,
@@ -109,6 +134,7 @@ contract Lottery is KeeperCompatibleInterface {
         require(_randomness > 0, "random-not-found");
 
         uint256 winnerIndex = _randomness % players.length;
+        latestWinner = players[winnerIndex];
         uint256 ticketPool = players.length * ticketPrice;
         players = new address payable[](0);
         lotteryState = LotteryState.CLOSED;
@@ -117,11 +143,11 @@ contract Lottery is KeeperCompatibleInterface {
         emit EndLottery(_randomness);
     }
 
-    function getPlayers() public view returns (address payable[] memory) {
-        return players;
+    function getPot() external view returns (uint256) {
+        return players.length * ticketPrice;
     }
 
-    function getPot() public view returns (uint256) {
-        return players.length * ticketPrice;
+    function getPlayerCount() external view returns (uint256) {
+        return players.length;
     }
 }

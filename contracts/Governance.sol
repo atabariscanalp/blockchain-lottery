@@ -6,7 +6,7 @@ contract Governance {
     address public lottery;
     address public randomness;
     address public duello;
-    uint256 public oneTime;
+    uint256 private oneTime;
 
     constructor() {
         oneTime = 1;
@@ -17,8 +17,10 @@ contract Governance {
         address _randomness,
         address _duello
     ) public {
-        require(_randomness != address(0), "governance/no-randomnesss-address");
-        require(_lottery != address(0), "no-lottery-address-given");
+        require(_randomness != address(0), "randomness address is null");
+        require(_lottery != address(0), "lottery address is null");
+        require(_duello != address(0), "duello address is null");
+        require(oneTime != 0, "cannot call init again!");
 
         oneTime--;
         randomness = _randomness;

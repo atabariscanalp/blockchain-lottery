@@ -10,6 +10,9 @@ module.exports = {
     "standard",
     "plugin:prettier/recommended",
     "plugin:node/recommended",
+    "plugin:import/typescript",
+    "plugin:import/errors",
+    "plugin:import/warnings",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
@@ -20,5 +23,16 @@ module.exports = {
       "error",
       { ignores: ["modules"] },
     ],
+  },
+  settings: {
+    "import/resolver": {
+      node: {
+        tryExtensions: [".js", ".jsx", ".ts", ".tsx"],
+      },
+      typescript: {},
+    },
+  },
+  "import/parsers": {
+    "@typescript-eslint/parser": [".ts", ".tsx"],
   },
 };
