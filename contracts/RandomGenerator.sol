@@ -3,7 +3,6 @@
 pragma solidity 0.8.11;
 
 import {GovernanceInterface} from "./interfaces/GovernanceInterface.sol";
-import {LotteryInterface} from "./interfaces/LotteryInterface.sol";
 import {DuelloInterface} from "./interfaces/DuelloInterface.sol";
 
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
@@ -33,21 +32,7 @@ contract RandomNumberGenerator is VRFConsumerBase {
     /**
      *	Requests randomness to VRFCoordinator
      */
-    function getRandom() external returns (bytes32 requestId) {
-        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK");
-        require(keyhash != bytes32(0), "Must have a valid keyhash!");
-
-        bytes32 _requestId = requestRandomness(keyhash, fee);
-        requestIds[_requestId] = "";
-
-        emit RequestedRandomness(_requestId);
-    }
-
-    /**
-     *	Requests randomness to VRFCoordinator
-     *	Overloads getRandom function to work with Duello Contract
-     */
-    function getRandom(bytes32 _roomId) external returns (bytes32 requestId) {
+    function getRandom(bytes32 _roomId) external {
         require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK");
         require(keyhash != bytes32(0), "Must have a valid keyhash!");
 
@@ -70,13 +55,7 @@ contract RandomNumberGenerator is VRFConsumerBase {
 
         emit FulfilledRandomness();
 
-        bool isLottery = requestIds[_requestId] == "";
-
-        if (isLottery) {
-            LotteryInterface(governance.lottery()).endLottery(_randomness);
-        } else {
-            bytes32 roomId = requestIds[_requestId];
-            DuelloInterface(governance.duello()).endDuello(roomId, _randomness);
-        }
+        bytes32 roomId = requestIds[_requestId];
+        DuelloInterface(governance.duello()).endDuello(roomId, _randomness);
     }
 }
