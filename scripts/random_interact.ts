@@ -1,20 +1,16 @@
 import { ethers } from "hardhat";
+import { getRandomGeneratorAt } from "./utils";
 
-const RANDOM_GENERATOR_ADDRESS = "0xEF72638aD4AE3379964F2c5C17FD3545aBD5af29";
-
-const startLottery = async () => {
-  const [owner] = await ethers.getSigners();
-
-  const randomGeneratorContract = await ethers.getContractAt(
-    "RandomNumberGenerator",
-    RANDOM_GENERATOR_ADDRESS,
-    owner
+const main = async () => {
+  const randomGenerator = await getRandomGeneratorAt(
+    "0xdB9C4cDdB066FA21992C1565D18E3C604d6CA765"
   );
+  const randomness = await randomGenerator.mostRecentRandomness();
+  console.log("randomness: ", randomness.toString());
 
-  const res = await randomGeneratorContract.mostRecentRandomness();
-  console.log("most recent randomness: ", res.toString());
+  const roomId = ethers.utils.formatBytes32String("1");
+  const tx1 = await randomGenerator.getRandom(roomId);
+  await tx1.wait();
 };
 
-startLottery()
-  .then()
-  .catch((err) => console.error(err));
+main();

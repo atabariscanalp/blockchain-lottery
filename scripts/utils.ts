@@ -13,14 +13,6 @@ export const deployContractsToKovan = async () => {
   console.log("governance contract deployed to: ", governance.address);
 
   /**
-   * deploy lottery
-   */
-  const Lottery = await ethers.getContractFactory("Lottery");
-  const lottery = await Lottery.deploy(120, governance.address);
-  await lottery.deployed();
-  console.log("lottery contract deployed to: ", lottery.address);
-
-  /**
    * deploy random number generator
    */
   const RandomNumberGenerator = await ethers.getContractFactory(
@@ -49,17 +41,23 @@ export const deployContractsToKovan = async () => {
   /**
    * connect contracts through governance
    */
-  const tx = await governance.init(
-    lottery.address,
-    randomGenerator.address,
-    duello.address
-  );
+  const tx = await governance.init(randomGenerator.address, duello.address);
   await tx.wait();
 
+  await transferKovanLinkTokenTo(randomGenerator.address);
+
+  return [governance, randomGenerator, duello];
+};
+
+export const wait = async (second: number) => {
+  return new Promise((resolve) => setTimeout(resolve, second * 1000));
+};
+
+export const transferKovanLinkTokenTo = async (address: string) => {
   /**
    * get addresses
    */
-  const [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
 
   /**
    * create link token
@@ -74,7 +72,7 @@ export const deployContractsToKovan = async () => {
    * transfer link token to random number generator contract
    */
   const transferTransaction = await linkTokenContract.transfer(
-    randomGenerator.address,
+    address,
     "1000000000000000000"
   );
   await transferTransaction.wait();
@@ -82,14 +80,22 @@ export const deployContractsToKovan = async () => {
     "transfer to random contract completed! ",
     transferTransaction.hash
   );
+};
 
-  /**
-   * transfer link token to random number generator contract
-   */
-  const transferTransaction2 = await linkTokenContract.transfer(
-    lottery.address,
-    "1000000000000000000"
+export const getRandomGeneratorAt = async (address: string) => {
+  const [owner] = await ethers.getSigners();
+  const contract = await ethers.getContractAt(
+    "RandomNumberGenerator",
+    address,
+    owner
   );
-  await transferTransaction2.wait();
-  console.log("transfer to lottery completed! ", transferTransaction2.hash);
+
+  return contract;
+};
+
+export const getDuelloAt = async (address: string) => {
+  const [owner] = await ethers.getSigners();
+  const contract = await ethers.getContractAt("Duel", address, owner);
+
+  return contract;
 };

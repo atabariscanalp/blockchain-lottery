@@ -10,6 +10,8 @@ contract Duel {
 
     event EndDuel(uint256 randomness);
     event ForceEndDuel(address payable withdrawer);
+    event EnterDuel(address payable player);
+    event StartDuel();
 
     struct DuelPlayer {
         address payable _address;
@@ -22,8 +24,11 @@ contract Duel {
         governance = GovernanceInterface(_governance);
     }
 
+    // TODO: add withdraw function!
+
     function enterDuel(bytes32 _roomId) external payable {
-        require(duelRooms[_roomId].length < 2, "Room is full.");
+        require(duelRooms[_roomId].length <= 2, "Room is full.");
+        // TODO: struct creation can be optimized!
         DuelPlayer memory duelPlayer = DuelPlayer({
             _address: payable(msg.sender),
             _betAmount: msg.value,
@@ -31,6 +36,8 @@ contract Duel {
         });
 
         duelRooms[_roomId].push(duelPlayer);
+
+        emit EnterDuel(duelPlayer._address);
     }
 
     function forceEndDuel(bytes32 _roomId) external {
@@ -42,10 +49,12 @@ contract Duel {
 
     function startDuel(bytes32 _roomId) external {
         RandomnessInterface(governance.randomness()).getRandom(_roomId);
+        emit StartDuel();
     }
 
+    // TODO: make it ownerOnly so only random generator contract call it!
     function endDuel(bytes32 _roomId, uint256 _randomness) public {
-        require(duelRooms[_roomId].length == 2, "Room is not full.");
+        // require(duelRooms[_roomId].length == 2, "Room is not full.");
 
         DuelPlayer[] memory duelPlayers = duelRooms[_roomId];
         uint256 betAmount = duelPlayers[0]._betAmount * 2;
@@ -56,5 +65,14 @@ contract Duel {
         winner.transfer((betAmount * 9) / 10);
 
         emit EndDuel(_randomness);
+    }
+
+    function getRoomCount(bytes32 _roomId) external view returns (uint256) {
+        return duelRooms[_roomId].length;
+    }
+
+    function getRoomPlayer(bytes32 _roomId) external view returns (address) {
+        DuelPlayer[] memory arr = duelRooms[_roomId];
+        return arr.length > 1 ? arr[0]._address : address(0);
     }
 }

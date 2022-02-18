@@ -46,6 +46,7 @@ const config: HardhatUserConfig = {
         `${process.env.PRIVATE_KEY_2}`,
         `${process.env.PRIVATE_KEY_3}`,
       ],
+      timeout: 100000,
     },
   },
   gasReporter: {

@@ -10,13 +10,13 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 contract RandomNumberGenerator is VRFConsumerBase {
     bytes32 internal keyhash;
     uint256 internal fee;
-    mapping(bytes32 => bytes32) internal requestIds;
+    mapping(bytes32 => bytes32) public requestIds;
     uint256 public mostRecentRandomness;
 
     GovernanceInterface public governance;
 
     event RequestedRandomness(bytes32 requestId);
-    event FulfilledRandomness();
+    event FulfilledRandomness(bytes32 roomId, uint256 randomness);
 
     constructor(
         address _vrfCoordinator,
@@ -42,6 +42,15 @@ contract RandomNumberGenerator is VRFConsumerBase {
         emit RequestedRandomness(_requestId);
     }
 
+    function generateRandom() external {
+        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK");
+        require(keyhash != bytes32(0), "Must have a valid keyhash!");
+
+        bytes32 _requestId = requestRandomness(keyhash, fee);
+
+        emit RequestedRandomness(_requestId);
+    }
+
     /**
      * Required to override to request randomness from VRFCoordinator
      */
@@ -49,13 +58,13 @@ contract RandomNumberGenerator is VRFConsumerBase {
         internal
         override
     {
-        require(_randomness > 0, "random not found");
+        // require(_randomness > 0, "random not found");
 
         mostRecentRandomness = _randomness;
 
-        emit FulfilledRandomness();
-
         bytes32 roomId = requestIds[_requestId];
-        DuelloInterface(governance.duello()).endDuello(roomId, _randomness);
+
+        emit FulfilledRandomness(roomId, _randomness);
+        DuelloInterface(governance.duello()).endDuel(roomId, _randomness);
     }
 }
