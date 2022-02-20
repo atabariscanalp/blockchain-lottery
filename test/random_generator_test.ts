@@ -5,18 +5,10 @@ import {
   KOVAN_KEY_HASH,
   KOVAN_LINK,
   KOVAN_VRF_COORDINATOR,
-  MUMBAI_KEY_HASH,
-  MUMBAI_LINK,
-  MUMBAI_VRFCOORDINATOR,
-  RINKEBY_FEE,
-  RINKEBY_KEY_HASH,
-  RINKEBY_LINK,
-  RINKEBY_VRFCOORDINATOR,
 } from "../scripts/constants";
 import { transferKovanLinkTokenTo, wait } from "../scripts/utils";
-import { Governance, RandomNumberGenerator } from "../typechain";
+import { RandomNumberGenerator } from "../typechain";
 
-let governance: Governance;
 let randomGenerator: RandomNumberGenerator;
 let owner: SignerWithAddress;
 let addr1: SignerWithAddress;

@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { getDuelloAt } from "../utils";
 
-const DUEL_ADDRESS = "0xDc179eD0699f7bC465A674095e845a2757be4E56";
+const DUEL_ADDRESS = "0xC9D2568Dc3b467e4770b76387CD77D65f79e2C14";
 
 const main = async () => {
   /**

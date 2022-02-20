@@ -42,15 +42,6 @@ contract RandomNumberGenerator is VRFConsumerBase {
         emit RequestedRandomness(_requestId);
     }
 
-    function generateRandom() external {
-        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK");
-        require(keyhash != bytes32(0), "Must have a valid keyhash!");
-
-        bytes32 _requestId = requestRandomness(keyhash, fee);
-
-        emit RequestedRandomness(_requestId);
-    }
-
     /**
      * Required to override to request randomness from VRFCoordinator
      */
@@ -58,7 +49,7 @@ contract RandomNumberGenerator is VRFConsumerBase {
         internal
         override
     {
-        // require(_randomness > 0, "random not found");
+        require(_randomness > 0, "random not found");
 
         mostRecentRandomness = _randomness;
 

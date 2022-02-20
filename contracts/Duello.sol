@@ -5,6 +5,8 @@ pragma solidity 0.8.11;
 import {RandomnessInterface} from "./interfaces/RandomnessInterface.sol";
 import {GovernanceInterface} from "./interfaces/GovernanceInterface.sol";
 
+import "../node_modules/hardhat/console.sol";
+
 contract Duel {
     GovernanceInterface public governance;
 
@@ -28,6 +30,12 @@ contract Duel {
 
     function enterDuel(bytes32 _roomId) external payable {
         require(duelRooms[_roomId].length <= 2, "Room is full.");
+        require(
+            duelRooms[_roomId].length == 1
+                ? duelRooms[_roomId][0]._betAmount == msg.value
+                : true,
+            "players should bet same amount"
+        );
         // TODO: struct creation can be optimized!
         DuelPlayer memory duelPlayer = DuelPlayer({
             _address: payable(msg.sender),
@@ -54,25 +62,53 @@ contract Duel {
 
     // TODO: make it ownerOnly so only random generator contract call it!
     function endDuel(bytes32 _roomId, uint256 _randomness) public {
-        // require(duelRooms[_roomId].length == 2, "Room is not full.");
+        require(duelRooms[_roomId].length == 2, "Room is not full.");
 
         DuelPlayer[] memory duelPlayers = duelRooms[_roomId];
+        console.log("[END_DUEL] duelPlayers count: %s", duelPlayers.length);
         uint256 betAmount = duelPlayers[0]._betAmount * 2;
+        console.log("[END_DUEL] bet amount: %s", betAmount / 10**18);
 
-        uint256 indexOfWinner = 2 % _randomness;
-        duelPlayers[indexOfWinner]._hasWon = true;
+        uint256 indexOfWinner = _randomness % 2;
+        console.log("[END_DUEL] index of winner: %s", indexOfWinner);
+        duelRooms[_roomId][indexOfWinner]._hasWon = true;
         address payable winner = duelPlayers[indexOfWinner]._address;
         winner.transfer((betAmount * 9) / 10);
+        console.log(
+            "[END_DUEL] win amount: %s",
+            ((betAmount * 9) / 10) / 10**18
+        );
 
         emit EndDuel(_randomness);
+    }
+
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
     }
 
     function getRoomCount(bytes32 _roomId) external view returns (uint256) {
         return duelRooms[_roomId].length;
     }
 
-    function getRoomPlayer(bytes32 _roomId) external view returns (address) {
-        DuelPlayer[] memory arr = duelRooms[_roomId];
-        return arr.length > 1 ? arr[0]._address : address(0);
+    function checkPlayerWon(bytes32 _roomId, uint256 index)
+        external
+        view
+        returns (bool)
+    {
+        require(duelRooms[_roomId].length == 2, "room should be full!");
+
+        return duelRooms[_roomId][index]._hasWon;
+    }
+
+    function getRoomPlayer(bytes32 _roomId, uint256 index)
+        external
+        view
+        returns (address)
+    {
+        require(index <= 1, "index can't be bigger than 1");
+
+        DuelPlayer[] memory room = duelRooms[_roomId];
+
+        return room.length > index ? room[index]._address : address(0);
     }
 }

@@ -1,3 +1,3 @@
-governance contract deployed to:  0x8427627EAE4E28e2c2e4f15C3F557793e610D5fB
-random number generator contract deployed to:  0x8d389880Ef99E72CFF9c12fA3a036eAd3099F24F
-duello contract deployed to:  0xDc179eD0699f7bC465A674095e845a2757be4E56
+governance contract deployed to:  0x9EA01b0b3700BF4dC336158D496AF71192906e4a
+random number generator contract deployed to:  0x5b716CC939EE28ddBfA454E58ec99A5EA5718A40
+duello contract deployed to:  0xC9D2568Dc3b467e4770b76387CD77D65f79e2C14
