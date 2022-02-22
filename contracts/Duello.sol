@@ -56,6 +56,8 @@ contract Duel {
     }
 
     function startDuel(bytes32 _roomId) external {
+        require(duelRooms[_roomId].length == 2, "Room should be full.");
+
         RandomnessInterface(governance.randomness()).getRandom(_roomId);
         emit StartDuel();
     }
