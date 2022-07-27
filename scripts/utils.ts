@@ -1,9 +1,12 @@
 import { ethers } from "hardhat";
-import { KOVAN_KEY_HASH, KOVAN_LINK, KOVAN_VRF_COORDINATOR } from "./constants";
+import { NETWORKS } from "./types";
+import { keyHashes, linkTokenAddresses, vrfCoordinators } from "./constants";
+import fs from "fs";
+import contractAddresses from "../contracts.json";
 
 const linkTokenAbi = require("@chainlink/contracts/abi/v0.8/LinkTokenInterface.json");
 
-export const deployContractsToKovan = async () => {
+export const deployContracts = async (network: keyof typeof NETWORKS) => {
   /**
    * deploy governance
    */
@@ -19,10 +22,11 @@ export const deployContractsToKovan = async () => {
     "RandomNumberGenerator"
   );
   const randomGenerator = await RandomNumberGenerator.deploy(
-    KOVAN_VRF_COORDINATOR,
-    KOVAN_LINK,
-    KOVAN_KEY_HASH,
-    governance.address
+    vrfCoordinators[network],
+    linkTokenAddresses[network],
+    keyHashes[network],
+    governance.address,
+    ethers.BigNumber.from(process.env.SUBSCRIPTION_ID)
   );
   await randomGenerator.deployed();
   console.log(
@@ -31,29 +35,45 @@ export const deployContractsToKovan = async () => {
   );
 
   /**
-   * deploy duello
+   * deploy duel
    */
-  const Duello = await ethers.getContractFactory("Duel");
-  const duello = await Duello.deploy(governance.address);
-  await duello.deployed();
-  console.log("duello contract deployed to: ", duello.address);
+  const Duel = await ethers.getContractFactory("Duel");
+  const duel = await Duel.deploy(governance.address);
+  await duel.deployed();
+  console.log("duel contract deployed to: ", duel.address);
 
   /**
    * connect contracts through governance
    */
-  const tx = await governance.init(randomGenerator.address, duello.address);
+  const tx = await governance.init(randomGenerator.address, duel.address);
   await tx.wait();
 
-  await transferKovanLinkTokenTo(randomGenerator.address);
+  /**
+   * write contract addresses to json file
+   */
+  console.log("writing contracts...");
+  writeToFile("contracts.json", {
+    governanceAddress: governance.address,
+    randomGeneratorAddress: randomGenerator.address,
+    duelAddress: duel.address,
+  });
 
-  return [governance, randomGenerator, duello];
+  /**
+   * transfer link token to the random generator contract
+   */
+  await transferLinkTokenTo(randomGenerator.address, network);
+
+  return [governance, randomGenerator, duel];
 };
 
 export const wait = async (second: number) => {
   return new Promise((resolve) => setTimeout(resolve, second * 1000));
 };
 
-export const transferKovanLinkTokenTo = async (address: string) => {
+export const transferLinkTokenTo = async (
+  address: string,
+  network: keyof typeof NETWORKS
+) => {
   /**
    * get addresses
    */
@@ -63,7 +83,7 @@ export const transferKovanLinkTokenTo = async (address: string) => {
    * create link token
    */
   const linkTokenContract = new ethers.Contract(
-    KOVAN_LINK,
+    linkTokenAddresses[network],
     linkTokenAbi,
     owner
   );
@@ -84,18 +104,22 @@ export const transferKovanLinkTokenTo = async (address: string) => {
 
 export const getRandomGeneratorAt = async (address: string) => {
   const [owner] = await ethers.getSigners();
-  const contract = await ethers.getContractAt(
-    "RandomNumberGenerator",
-    address,
-    owner
-  );
-
-  return contract;
+  return await ethers.getContractAt("RandomNumberGenerator", address, owner);
 };
 
-export const getDuelloAt = async (address: string) => {
+export const getDuelAt = async (address: string) => {
   const [owner] = await ethers.getSigners();
-  const contract = await ethers.getContractAt("Duel", address, owner);
+  return await ethers.getContractAt("Duel", address, owner);
+};
 
-  return contract;
+const writeToFile = (path: string, data: Record<string, string>) => {
+  const writeableData = JSON.stringify(data, null, 2);
+  fs.writeFile(path, writeableData, (error) => {
+    if (error) throw error;
+    console.log("successfully write data to file");
+  });
+};
+
+export const getContractAddresses = () => {
+  return contractAddresses;
 };

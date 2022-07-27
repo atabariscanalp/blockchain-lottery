@@ -1,7 +1,7 @@
-import { deployContractsToKovan } from "./utils";
+import { deployContracts } from "./utils";
 
 const deploy = async () => {
-  await deployContractsToKovan();
+  await deployContracts("MUMBAI");
 };
 
 deploy().catch((error) => {

@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
-import { getDuelloAt, getRandomGeneratorAt } from "../utils";
+import { getContractAddresses, getDuelAt } from "../utils";
 
 const main = async () => {
-  const duel = await getDuelloAt("0xfCFe8db9dFB33551F652c51243021C51A3723215");
+  const { duelAddress } = getContractAddresses();
+  const duel = await getDuelAt(duelAddress);
 
   const roomId = ethers.utils.formatBytes32String("4");
 

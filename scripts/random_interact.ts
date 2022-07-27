@@ -1,10 +1,9 @@
 import { ethers } from "hardhat";
-import { getRandomGeneratorAt } from "./utils";
+import { getContractAddresses, getRandomGeneratorAt } from "./utils";
 
 const main = async () => {
-  const randomGenerator = await getRandomGeneratorAt(
-    "0xdB9C4cDdB066FA21992C1565D18E3C604d6CA765"
-  );
+  const { randomGeneratorAddress } = getContractAddresses();
+  const randomGenerator = await getRandomGeneratorAt(randomGeneratorAddress);
   const randomness = await randomGenerator.mostRecentRandomness();
   console.log("randomness: ", randomness.toString());
 
