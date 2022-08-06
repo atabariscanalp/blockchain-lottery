@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy-lottery": "hh run scripts/lottery/lottery_deploy.ts --network kovan",
-    "start-lottery": "hh run scripts/lottery/lottery_start.ts --network kovan",
-    "test-lottery": "hh run scripts/lottery/lottery_test.ts --network kovan"
+    "deploy-kovan": "hh run scripts/deploy.ts --network kovan",
+    "deploy-mumbai": "hh run scripts/deploy.ts --network mumbai",
+    "start-duel-kovan": "hh run scripts/duel/start_duel.ts --network kovan",
+    "start-duel-mumbai": "hh run scripts/duel/start_duel.ts --network mumbai",
+    "test-rng": "hh test test/random_generator_test.ts --network mumbai"
   },
   "keywords": [],
   "author": "",
@@ -16,13 +17,13 @@
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^2.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.2",
-    "@typechain/ethers-v5": "^7.2.0",
-    "@typechain/hardhat": "^2.3.1",
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.2",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "^12.20.42",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
     "chai": "^4.3.5",
     "dotenv": "^10.0.0",
     "eslint": "^7.32.0",
@@ -30,7 +31,6 @@
     "eslint-config-standard": "^16.0.3",
     "eslint-import-resolver-typescript": "^2.5.0",
     "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^3.4.1",
     "eslint-plugin-promise": "^5.2.0",
     "ethereum-waffle": "^3.4.0",
@@ -42,10 +42,10 @@
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.18",
     "ts-node": "^10.4.0",
-    "typechain": "^5.2.0",
+    "typechain": "^8.1.0",
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.3.1"
+    "@chainlink/contracts": "^0.4.1"
   }
 }

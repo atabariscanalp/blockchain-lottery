@@ -1,4 +1,0 @@
-governance contract deployed to:  0xB27448B3e712CF0167b117b02068C09517de0b44
-lottery contract deployed to:  0x00523BF014760836Ce8aD30EcE359607Cf009450
-random number generator contract deployed to:  0xbE38e40007d37A29Cd355F296bf27663E673dd04
-duello contract deployed to:  0x97F4c3cA0647f79F40E72b5075dADA4FF652f2fE

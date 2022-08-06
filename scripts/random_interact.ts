@@ -1,20 +1,15 @@
 import { ethers } from "hardhat";
+import { getContractAddresses, getRandomGeneratorAt } from "./utils";
 
-const RANDOM_GENERATOR_ADDRESS = "0xEF72638aD4AE3379964F2c5C17FD3545aBD5af29";
+const main = async () => {
+  const { randomGeneratorAddress } = getContractAddresses();
+  const randomGenerator = await getRandomGeneratorAt(randomGeneratorAddress);
+  const randomness = await randomGenerator.mostRecentRandomness();
+  console.log("randomness: ", randomness.toString());
 
-const startLottery = async () => {
-  const [owner] = await ethers.getSigners();
-
-  const randomGeneratorContract = await ethers.getContractAt(
-    "RandomNumberGenerator",
-    RANDOM_GENERATOR_ADDRESS,
-    owner
-  );
-
-  const res = await randomGeneratorContract.mostRecentRandomness();
-  console.log("most recent randomness: ", res.toString());
+  const roomId = ethers.utils.formatBytes32String("1");
+  const tx1 = await randomGenerator.getRandom(roomId);
+  await tx1.wait();
 };
 
-startLottery()
-  .then()
-  .catch((err) => console.error(err));
+main();

@@ -12,3 +12,8 @@ artifacts
 .vscode
 
 package-lock.json
+
+contracts.json
+
+typechain-types
+.idea

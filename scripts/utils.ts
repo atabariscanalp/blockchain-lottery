@@ -1,9 +1,12 @@
 import { ethers } from "hardhat";
-import { KOVAN_KEY_HASH, KOVAN_LINK, KOVAN_VRF_COORDINATOR } from "./constants";
+import { NETWORKS } from "./types";
+import { keyHashes, linkTokenAddresses, vrfCoordinators } from "./constants";
+import fs from "fs";
+import contractAddresses from "../contracts.json";
 
 const linkTokenAbi = require("@chainlink/contracts/abi/v0.8/LinkTokenInterface.json");
 
-export const deployContractsToKovan = async () => {
+export const deployContracts = async (network: keyof typeof NETWORKS) => {
   /**
    * deploy governance
    */
@@ -13,24 +16,17 @@ export const deployContractsToKovan = async () => {
   console.log("governance contract deployed to: ", governance.address);
 
   /**
-   * deploy lottery
-   */
-  const Lottery = await ethers.getContractFactory("Lottery");
-  const lottery = await Lottery.deploy(120, governance.address);
-  await lottery.deployed();
-  console.log("lottery contract deployed to: ", lottery.address);
-
-  /**
    * deploy random number generator
    */
   const RandomNumberGenerator = await ethers.getContractFactory(
     "RandomNumberGenerator"
   );
   const randomGenerator = await RandomNumberGenerator.deploy(
-    KOVAN_VRF_COORDINATOR,
-    KOVAN_LINK,
-    KOVAN_KEY_HASH,
-    governance.address
+    vrfCoordinators[network],
+    linkTokenAddresses[network],
+    keyHashes[network],
+    governance.address,
+    ethers.BigNumber.from(process.env.SUBSCRIPTION_ID)
   );
   await randomGenerator.deployed();
   console.log(
@@ -39,33 +35,55 @@ export const deployContractsToKovan = async () => {
   );
 
   /**
-   * deploy duello
+   * deploy duel
    */
-  const Duello = await ethers.getContractFactory("Duel");
-  const duello = await Duello.deploy(governance.address);
-  await duello.deployed();
-  console.log("duello contract deployed to: ", duello.address);
+  const Duel = await ethers.getContractFactory("Duel");
+  const duel = await Duel.deploy(governance.address);
+  await duel.deployed();
+  console.log("duel contract deployed to: ", duel.address);
 
   /**
    * connect contracts through governance
    */
-  const tx = await governance.init(
-    lottery.address,
-    randomGenerator.address,
-    duello.address
-  );
+  const tx = await governance.init(randomGenerator.address, duel.address);
   await tx.wait();
 
   /**
+   * write contract addresses to json file
+   */
+  console.log("writing contracts...");
+  writeToFile("contracts.json", {
+    governanceAddress: governance.address,
+    randomGeneratorAddress: randomGenerator.address,
+    duelAddress: duel.address,
+  });
+
+  /**
+   * transfer link token to the random generator contract
+   */
+  await transferLinkTokenTo(randomGenerator.address, network);
+
+  return [governance, randomGenerator, duel];
+};
+
+export const wait = async (second: number) => {
+  return new Promise((resolve) => setTimeout(resolve, second * 1000));
+};
+
+export const transferLinkTokenTo = async (
+  address: string,
+  network: keyof typeof NETWORKS
+) => {
+  /**
    * get addresses
    */
-  const [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
 
   /**
    * create link token
    */
   const linkTokenContract = new ethers.Contract(
-    KOVAN_LINK,
+    linkTokenAddresses[network],
     linkTokenAbi,
     owner
   );
@@ -74,7 +92,7 @@ export const deployContractsToKovan = async () => {
    * transfer link token to random number generator contract
    */
   const transferTransaction = await linkTokenContract.transfer(
-    randomGenerator.address,
+    address,
     "1000000000000000000"
   );
   await transferTransaction.wait();
@@ -82,14 +100,26 @@ export const deployContractsToKovan = async () => {
     "transfer to random contract completed! ",
     transferTransaction.hash
   );
+};
 
-  /**
-   * transfer link token to random number generator contract
-   */
-  const transferTransaction2 = await linkTokenContract.transfer(
-    lottery.address,
-    "1000000000000000000"
-  );
-  await transferTransaction2.wait();
-  console.log("transfer to lottery completed! ", transferTransaction2.hash);
+export const getRandomGeneratorAt = async (address: string) => {
+  const [owner] = await ethers.getSigners();
+  return await ethers.getContractAt("RandomNumberGenerator", address, owner);
+};
+
+export const getDuelAt = async (address: string) => {
+  const [owner] = await ethers.getSigners();
+  return await ethers.getContractAt("Duel", address, owner);
+};
+
+const writeToFile = (path: string, data: Record<string, string>) => {
+  const writeableData = JSON.stringify(data, null, 2);
+  fs.writeFile(path, writeableData, (error) => {
+    if (error) throw error;
+    console.log("successfully write data to file");
+  });
+};
+
+export const getContractAddresses = () => {
+  return contractAddresses;
 };

@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "@nomiclabs/hardhat-ethers";
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.11",
+  solidity: "0.8.15",
   networks: {
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
@@ -32,7 +33,12 @@ const config: HardhatUserConfig = {
     },
     mumbai: {
       url: process.env.MUMBAI_URL,
-      accounts: [`${process.env.PRIVATE_KEY}`],
+      accounts: [
+        `${process.env.PRIVATE_KEY}`,
+        `${process.env.PRIVATE_KEY_2}`,
+        `${process.env.PRIVATE_KEY_3}`,
+      ],
+      timeout: 100000,
     },
     rinkeby: {
       url: process.env.RINKEBY_URL,
@@ -46,6 +52,7 @@ const config: HardhatUserConfig = {
         `${process.env.PRIVATE_KEY_2}`,
         `${process.env.PRIVATE_KEY_3}`,
       ],
+      timeout: 100000,
     },
   },
   gasReporter: {
@@ -54,6 +61,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  mocha: {
+    timeout: 1000000,
   },
 };
 

@@ -1,25 +1,27 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import "./App.css";
+import { Modal } from "./components/Modal";
+import { ModalProvider } from "./utils/context";
+import { Route, Routes } from "react-router-dom";
+import {
+  DuelScreen,
+  FAQScreen,
+  HistoryScreen,
+  HomeScreen,
+  RulesScreen,
+} from "./pages";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ModalProvider>
+      <Modal />
+      <Routes>
+        <Route path={"/"} element={<HomeScreen />} />
+        <Route path={"/duel"} element={<DuelScreen />} />
+        <Route path={"/history"} element={<HistoryScreen />} />
+        <Route path={"/rules"} element={<RulesScreen />} />
+        <Route path={"/faq"} element={<FAQScreen />} />
+      </Routes>
+    </ModalProvider>
   );
 }
 
