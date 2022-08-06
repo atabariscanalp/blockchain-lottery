@@ -15,4 +15,4 @@ package-lock.json
 
 contracts.json
 
-typechain-types
+/typechain-types/
