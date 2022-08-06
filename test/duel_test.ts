@@ -1,20 +1,19 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Duel } from "../typechain";
+import { Duel } from "../typechain-types";
 
 let duel: Duel;
 let owner: SignerWithAddress;
 let bob: SignerWithAddress;
 let alice: SignerWithAddress;
-let addrs: SignerWithAddress[];
 
 before(async () => {
-  const Duello = await ethers.getContractFactory("Duel");
-  duel = await Duello.deploy();
+  const Duel = await ethers.getContractFactory("Duel");
+  duel = await Duel.deploy("0xauauaaiaia");
   await duel.deployed();
 
-  [owner, bob, alice, ...addrs] = await ethers.getSigners();
+  [owner, bob, alice] = await ethers.getSigners();
 });
 
 describe("Deployment", function () {
@@ -53,9 +52,6 @@ describe("Duel", () => {
     expect(player2, "player2 address should equal to alice").to.equal(
       alice.address
     );
-
-    const tx3 = await duel.startDuel(roomId);
-    await tx3.wait();
 
     const tx4 = await duel.endDuel(roomId, 3);
     await tx4.wait();

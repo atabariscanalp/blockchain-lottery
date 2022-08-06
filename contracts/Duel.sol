@@ -11,6 +11,7 @@ contract Duel {
     GovernanceInterface public governance;
 
     address owner;
+    address contractOwner;
 
     event EndDuel(uint256 randomness);
     event ForceEndDuel(address payable withdrawer);
@@ -36,6 +37,11 @@ contract Duel {
         _;
     }
 
+    modifier onlyContractOwner() {
+        require(msg.sender == contractOwner, "only contractOwner can call it");
+        _;
+    }
+
     function transferOwnership(address newOwner) external onlyOwner {
         owner = newOwner;
 
@@ -43,6 +49,10 @@ contract Duel {
     }
 
     // TODO: add withdraw function!
+    function withdraw(address payable toAddress) external onlyOwner {
+        (bool sent,) = toAddress.call{value : address(this).balance}('');
+        require(sent, "failed to send remaining balance");
+    }
 
     function enterDuel(bytes32 _roomId) external payable {
         require(duelRooms[_roomId].length <= 2, "Room is full.");
@@ -87,12 +97,12 @@ contract Duel {
         emit StartDuel();
     }
 
-    // TODO: make it ownerOnly so only random generator contract call it!
-    function endDuel(bytes32 _roomId, uint256 _randomness) public onlyOwner {
+    function endDuel(bytes32 _roomId, uint256 _randomness) public onlyContractOwner {
         require(duelRooms[_roomId].length == 2, "Room is not full.");
 
         DuelPlayer[] memory duelPlayers = duelRooms[_roomId];
         console.log("[END_DUEL] duelPlayers count: %s", duelPlayers.length);
+        // TODO: what if betAmount overflows!!!
         uint256 betAmount = duelPlayers[0]._betAmount * 2;
         console.log("[END_DUEL] bet amount: %s", betAmount / 10 ** 18);
 
@@ -113,6 +123,7 @@ contract Duel {
         return address(this).balance;
     }
 
+    // TODO: change function name
     function getRoomCount(bytes32 _roomId) external view returns (uint256) {
         return duelRooms[_roomId].length;
     }
@@ -123,6 +134,7 @@ contract Duel {
     returns (bool)
     {
         require(duelRooms[_roomId].length == 2, "room should be full!");
+        require(index <= 1, "index can't be bigger than 1.");
 
         return duelRooms[_roomId][index]._hasWon;
     }

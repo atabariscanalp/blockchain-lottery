@@ -1,35 +1,20 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import {
-  KOVAN_KEY_HASH,
-  KOVAN_LINK,
-  KOVAN_VRF_COORDINATOR,
-} from "../scripts/constants";
-import { transferKovanLinkTokenTo, wait } from "../scripts/utils";
-import { RandomNumberGenerator } from "../typechain";
+import { getRandomGeneratorAt, wait } from "../scripts/utils";
+import { RandomNumberGenerator } from "../typechain-types";
 
 let randomGenerator: RandomNumberGenerator;
 let owner: SignerWithAddress;
-let addr1: SignerWithAddress;
-let addr2: SignerWithAddress;
-let addrs: SignerWithAddress[];
 
+const randomGeneratorAddress = "0x1dc47384EF480a0E3513B090Debd6CbC001cF3B7";
+
+/**
+ * deploy random generator contract before tests
+ */
 before(async function () {
-  const RandomNumberGenerator = await ethers.getContractFactory(
-    "RandomNumberGenerator"
-  );
-  [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
-
-  randomGenerator = await RandomNumberGenerator.deploy(
-    KOVAN_VRF_COORDINATOR,
-    KOVAN_LINK,
-    KOVAN_KEY_HASH,
-    "0xB27448B3e712CF0167b117b02068C09517de0b44"
-  );
-  await randomGenerator.deployed();
-
-  await transferKovanLinkTokenTo(randomGenerator.address);
+  [owner] = await ethers.getSigners();
+  randomGenerator = await getRandomGeneratorAt(randomGeneratorAddress);
 });
 
 describe("Deployment", function () {
@@ -45,14 +30,24 @@ describe("Random Number Generation", () => {
   });
   it("Should get a random number", async () => {
     const bytes32value = ethers.utils.formatBytes32String("1");
-    const tx1 = await randomGenerator.getRandom(bytes32value);
+    const tx1 = await randomGenerator.getRandom(bytes32value, {
+      gasLimit: ethers.BigNumber.from(100000),
+    });
     expect(tx1).to.emit(randomGenerator, "RequestedRandomness");
 
-    wait(90);
+    // wait for random generator contract to fulfill randomness
+    await wait(90);
 
     const randomness = await randomGenerator.mostRecentRandomness();
+    expect(tx1).to.emit(randomGenerator, "FulfilledRandomness");
     expect(randomness, "randomness should be bigger than 0").to.be.greaterThan(
-      ethers.BigNumber.from(0)
+      ethers.BigNumber.from("0")
     );
   });
+  /* it("Should revert get random as not the owner", async () => {
+    const bytes32value = ethers.utils.formatBytes32String("1");
+    const tx1 = await randomGenerator.connect(alice).getRandom(bytes32value);
+
+    await expect(tx1).to.be.revertedWith("only owner can call it");
+  }); */
 });

@@ -1,14 +1,22 @@
 import React, { useRef } from "react";
+import { useModalContext } from "../utils/context";
 
 interface ModalProps {}
 
-export const Modal: React.FC<ModalProps> = ({ children }) => {
-  const { isOpen, setIsOpen } = useModalContext();
+export const Modal: React.FC<ModalProps> = () => {
+  const { isOpen, setIsOpen, modalType } = useModalContext();
 
   const bgRef = useRef<HTMLDivElement | null>(null);
 
   const closeModal = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (bgRef.current === e.target) setIsOpen(false);
+  };
+
+  const setInnerModal = () => {
+    if (modalType === "metamask") {
+      return <span>metamask</span>;
+    }
+    return <span>coinbase</span>;
   };
 
   return (
@@ -23,7 +31,7 @@ export const Modal: React.FC<ModalProps> = ({ children }) => {
             style={{ width: 800, height: 500 }}
             className="bg-white rounded-md z-10 shadow-lg"
           >
-            {children}
+            {setInnerModal()}
           </div>
         </div>
       )}

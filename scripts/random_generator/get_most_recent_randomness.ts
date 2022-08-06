@@ -1,8 +1,9 @@
-import { getRandomGeneratorAt } from "../utils";
+import { getRandomGeneratorAt, getContractAddresses } from "../utils";
 
 const main = async () => {
+  const { randomGeneratorAddress } = getContractAddresses();
   const randomGeneratorContract = await getRandomGeneratorAt(
-    "0x061A25661EE9C02A944106E71706a03a84855082"
+    randomGeneratorAddress
   );
 
   const randomness = await randomGeneratorContract.mostRecentRandomness();

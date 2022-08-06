@@ -1,12 +1,12 @@
 import React from "react";
 import { NavigationBar } from "../components/NavigationBar";
-import { UserGuide } from "../components/UserGuide";
+import { Sidebar } from "../components/sidebar/Sidebar";
 
 export const HomeScreen = () => {
   return (
-    <div className="bg-slate-700 w-screen h-screen">
+    <div className="bg-rich-black w-screen h-screen">
+      <Sidebar />
       <NavigationBar />
-      <UserGuide />
     </div>
   );
 };

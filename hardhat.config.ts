@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "@nomiclabs/hardhat-ethers";
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ const config: HardhatUserConfig = {
         `${process.env.PRIVATE_KEY_2}`,
         `${process.env.PRIVATE_KEY_3}`,
       ],
+      timeout: 100000,
     },
     rinkeby: {
       url: process.env.RINKEBY_URL,
@@ -59,6 +61,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  mocha: {
+    timeout: 1000000,
   },
 };
 

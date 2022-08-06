@@ -13,20 +13,39 @@ contract RandomNumberGenerator is VRFConsumerBaseV2 {
     bytes32 internal keyhash;
     mapping(uint256 => bytes32) public requestIds;
     uint256 public mostRecentRandomness;
+    address owner;
+    address contractOwner;
 
     VRFCoordinatorV2Interface COORDINATOR;
     LinkTokenInterface LINKTOKEN;
+    GovernanceInterface public governance;
 
     uint64 subscriptionId;
     uint32 callbackGasLimit = 100000;
     uint16 requestConfirmations = 3;
     uint32 numWords = 1;
 
-    GovernanceInterface public governance;
-
     event RequestedRandomness(uint256 requestId);
     event FulfilledRandomness(bytes32 roomId, uint256 randomness);
+    event TransferOwnership(address newOwner);
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "only owner can call it");
+        _;
+    }
+
+    modifier onlyContractOwner() {
+        require(msg.sender == contractOwner, "only contract owner can call it");
+        _;
+    }
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        contractOwner = newOwner;
+
+        emit TransferOwnership(newOwner);
+    }
+
+    // TODO: LINKTOKEN might not be needed, delete later
     constructor(
         address _vrfCoordinator,
         address _link,
@@ -39,12 +58,13 @@ contract RandomNumberGenerator is VRFConsumerBaseV2 {
         subscriptionId = _subscriptionId;
         COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
         LINKTOKEN = LinkTokenInterface(_link);
+        owner = msg.sender;
     }
 
     /**
      *	Requests randomness to VRFCoordinator
      */
-    function getRandom(bytes32 _roomId) external {
+    function getRandom(bytes32 _roomId) external onlyContractOwner {
         require(keyhash != bytes32(0), "Must have a valid keyhash!");
 
         // TODO: function can revert, make an error catching function
@@ -78,5 +98,10 @@ contract RandomNumberGenerator is VRFConsumerBaseV2 {
 
         emit FulfilledRandomness(roomId, _randomness);
         DuelInterface(governance.duel()).endDuel(roomId, _randomness);
+    }
+
+    function addConsumer(address consumerAddress) external onlyOwner {
+        // Add a consumer contract to the subscription.
+        COORDINATOR.addConsumer(subscriptionId, consumerAddress);
     }
 }
