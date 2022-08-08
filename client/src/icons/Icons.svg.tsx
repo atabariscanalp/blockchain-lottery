@@ -10,6 +10,9 @@ import { ReactComponent as FAQIcon } from "./faq.svg";
 import { ReactComponent as FAQIconInactive } from "./faq-grey.svg";
 import { ReactComponent as RulesIcon } from "./rules.svg";
 import { ReactComponent as RulesIconInactive } from "./rules-grey.svg";
+import { ReactComponent as CoinbaseWalletIcon } from "./coinbase.svg";
+import { ReactComponent as MetamaskIcon } from "./metamask.svg";
+import { ReactComponent as WalletConnectIcon } from "./walletconnect.svg";
 
 export {
   WalletIcon,
@@ -24,4 +27,7 @@ export {
   HistoryIconInactive,
   HomeIconInactive,
   RulesIconInactive,
+  CoinbaseWalletIcon,
+  MetamaskIcon,
+  WalletConnectIcon,
 };

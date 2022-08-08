@@ -3,7 +3,10 @@ module.exports = {
   theme: {
     extend: {
       width: {
-        93: "93%",
+        62: "62%",
+      },
+      height: {
+        56: "56%",
       },
       borderWidth: {
         thin: "0.3px",
@@ -18,8 +21,10 @@ module.exports = {
       white: "#fdfdfd",
       green: "#32cd32",
       grey: "#d9d9d9",
+      "dark-grey": "#343A40",
       "rich-black": "#141d29",
       "blue-fade": "rgba(168,218,220,.1)",
+      "blue-fade-bold": "rgba(168,218,220,.3)",
     },
   },
   plugins: [],

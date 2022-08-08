@@ -21,7 +21,8 @@ type ButtonProps = DetailedHTMLProps<
   size?: keyof typeof sizeClassnames;
   color?: keyof typeof colorClassnames;
   loading?: boolean;
-  icon?: any;
+  icon?: JSX.Element;
+  classNameOverride?: string;
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -31,6 +32,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   className = "",
   icon,
+  classNameOverride,
   ...props
 }) => {
   return (
@@ -38,7 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       className={`${sizeClassnames[size]} ${colorClassnames[color]} ${
         icon ? iconClassname : null
-      } cursor-pointer`}
+      } cursor-pointer ${classNameOverride}`}
       {...props}
     >
       {icon}
