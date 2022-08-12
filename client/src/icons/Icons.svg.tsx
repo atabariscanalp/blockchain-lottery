@@ -13,6 +13,12 @@ import { ReactComponent as RulesIconInactive } from "./rules-grey.svg";
 import { ReactComponent as CoinbaseWalletIcon } from "./coinbase.svg";
 import { ReactComponent as MetamaskIcon } from "./metamask.svg";
 import { ReactComponent as WalletConnectIcon } from "./walletconnect.svg";
+import { ReactComponent as MaticIcon } from "./polygon.svg";
+import { ReactComponent as LockIcon } from "./lock.svg";
+import { ReactComponent as DownArrowIcon } from "./down_arrow.svg";
+import { ReactComponent as DownArrowFilled } from "./down_arrow_filled.svg";
+import { ReactComponent as DownArrowLong } from "./down_arrow_long.svg";
+import { ReactComponent as UpArrowLong } from "./up_arrow_long.svg";
 
 export {
   WalletIcon,
@@ -30,4 +36,10 @@ export {
   CoinbaseWalletIcon,
   MetamaskIcon,
   WalletConnectIcon,
+  MaticIcon,
+  LockIcon,
+  DownArrowIcon,
+  DownArrowFilled,
+  UpArrowLong,
+  DownArrowLong,
 };

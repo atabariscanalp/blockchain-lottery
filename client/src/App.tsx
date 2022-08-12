@@ -1,5 +1,4 @@
 import "./App.css";
-import { Modal } from "./components/Modal";
 import { ModalProvider } from "./utils/context";
 import { Route, Routes } from "react-router-dom";
 import {
@@ -15,7 +14,6 @@ function App() {
   return (
     <ModalProvider>
       <WalletListener>
-        <Modal />
         <Routes>
           <Route path={"/"} element={<HomeScreen />} />
           <Route path={"/duel"} element={<DuelScreen />} />

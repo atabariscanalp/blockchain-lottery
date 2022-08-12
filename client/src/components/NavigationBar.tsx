@@ -1,10 +1,11 @@
 import React from "react";
 import { Button } from "./Button";
 import { Logo } from "./Logo";
-import { WalletIcon } from "../icons/Icons.svg";
+import { DownArrowIcon, WalletIcon } from "../icons/Icons.svg";
 import { useModalContext } from "../utils/context";
 import { useWeb3React } from "@web3-react/core";
 import Jazzicon, { jsNumberForAddress } from "react-jazzicon";
+import { walletAddressParser } from "../utils/web3/web3.util";
 
 export const NavigationBar = () => {
   const { setIsOpen } = useModalContext();
@@ -32,10 +33,13 @@ export const NavigationBar = () => {
             paperStyles={{ marginRight: 12 }}
           />
         }
+        rightIcon={
+          <DownArrowIcon width={20} height={20} style={{ marginLeft: 4 }} />
+        }
         classNameOverride={"font-medium"}
         onClick={onDisconnect}
       >
-        {account.substring(0, 4) + "..." + account.substring(38)}
+        {walletAddressParser(account)}
       </Button>
     ) : (
       <Button

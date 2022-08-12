@@ -71,12 +71,12 @@ export const WalletOption: React.FC<Props> = ({ option }) => {
   return (
     <div
       className="flex flex-row items-center justify-start pl-6 border rounded-lg
-              border-blue-fade-bold py-3 cursor-pointer bg-blue-fade hover:border-honeydew
+              border-blue-fade-bold py-3 cursor-pointer bg-blue-fade hover:border-blue-light
               mb-2"
       onClick={wallets[option].onClick}
     >
       {wallets[option].icon}
-      <span className="ml-5 font-medium text-xl text-honeydew">
+      <span className="ml-5 font-medium text-xl text-rich-black">
         {wallets[option].name}
       </span>
     </div>

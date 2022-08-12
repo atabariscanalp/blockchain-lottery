@@ -3,7 +3,9 @@ import { useWeb3React } from "@web3-react/core";
 import { CoinbaseWallet } from "@web3-react/coinbase-wallet";
 import { MetaMask } from "@web3-react/metamask";
 import { hooks as coinbaseHooks } from "../utils/web3/connectors/coinbase";
+import { hooks as metamaskHooks } from "../utils/web3/connectors/metamask";
 import { useModalContext } from "../utils/context";
+import { formatEther } from "ethers/lib/utils";
 
 export const WalletListener: React.FC = ({ children }) => {
   const {
@@ -18,24 +20,15 @@ export const WalletListener: React.FC = ({ children }) => {
 
   const { setIsOpen } = useModalContext();
 
-  useEffect(() => {
-    setIsOpen(false);
-    console.log("new wallet is active", connector);
-    console.log("new wallet account", account);
-    console.log("new wallet provider", provider);
-    console.log("provider", provider);
-    console.log(
-      "provider instance coinbase",
-      connector instanceof CoinbaseWallet
-    );
-    console.log("provider instance metamask", connector instanceof MetaMask);
-    console.log("chain id", chainId);
-  }, [isActive, setIsOpen]);
+  if (account) {
+    provider
+      ?.getBalance(account)
+      .then((b) => console.log("balance", formatEther(b)));
+  }
 
   useEffect(() => {
-    console.log("is activating", isActivating);
-    console.log("activating connector", connector);
-  }, [isActivating]);
+    setIsOpen(false);
+  }, [isActive, setIsOpen]);
 
   return <>{children}</>;
 };

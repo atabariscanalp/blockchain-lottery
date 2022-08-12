@@ -1,35 +1,23 @@
 import React, { useState } from "react";
 import { MainLayout } from "../components/MainLayout";
+import { DuelComponent } from "../components/duel/Duel.Component";
+import { DuelHeader } from "../components/duel/Duel.Header";
+import { OnlineUserComponent } from "../components/duel/OnlineUser.Component";
+import { DuelPlayer } from "../components/duel/Duel.Player";
 
 export const DuelScreen = () => {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState<0 | 1>(0);
 
   return (
     <MainLayout>
       <div className="w-full h-56 flex flex-row items-center">
         <div className="flex flex-col h-full mr-10 grow">
-          <div className="w-full flex flex-row items-center mb-4">
-            <p
-              className={`w-1/2 text-center py-4 font-bold cursor-pointer text-xl ${
-                !index ? "text-honeydew" : "text-dark-grey"
-              }`}
-              onClick={() => setIndex(0)}
-            >
-              Place Bet
-            </p>
-            <p
-              className={`w-1/2 text-center py-4 font-bold cursor-pointer text-xl ${
-                index ? "text-honeydew" : "text-dark-grey"
-              }`}
-              onClick={() => setIndex(1)}
-            >
-              Find Games
-            </p>
-          </div>
-          <div className="bg-blue-fade grow flex rounded-lg"></div>
+          <DuelHeader index={index} setIndex={setIndex} />
+          <DuelComponent index={index} />
         </div>
-        <div className="bg-blue-fade w-62 h-full rounded-lg self-end flex"></div>
+        <DuelPlayer />
       </div>
+      <OnlineUserComponent />
     </MainLayout>
   );
 };
