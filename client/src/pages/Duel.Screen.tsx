@@ -1,12 +1,23 @@
-import React from "react";
-import { NavigationBar } from "../components/NavigationBar";
-import { Sidebar } from "../components/sidebar/Sidebar";
+import React, { useState } from "react";
+import { MainLayout } from "../components/MainLayout";
+import { DuelComponent } from "../components/duel/Duel.Component";
+import { DuelHeader } from "../components/duel/Duel.Header";
+import { OnlineUserComponent } from "../components/duel/OnlineUser.Component";
+import { DuelPlayer } from "../components/duel/Duel.Player";
 
 export const DuelScreen = () => {
+  const [index, setIndex] = useState<0 | 1>(0);
+
   return (
-    <div className="bg-rich-black w-screen h-screen">
-      <Sidebar />
-      <NavigationBar />
-    </div>
+    <MainLayout>
+      <div className="w-full h-56 flex flex-row items-center">
+        <div className="flex flex-col h-full mr-10 grow">
+          <DuelHeader index={index} setIndex={setIndex} />
+          <DuelComponent index={index} />
+        </div>
+        <DuelPlayer />
+      </div>
+      <OnlineUserComponent />
+    </MainLayout>
   );
 };

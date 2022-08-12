@@ -1,12 +1,10 @@
 import React from "react";
-import { NavigationBar } from "../components/NavigationBar";
-import { Sidebar } from "../components/sidebar/Sidebar";
+import { MainLayout } from "../components/MainLayout";
 
 export const RulesScreen = () => {
   return (
-    <div className="bg-rich-black w-screen h-screen">
-      <Sidebar />
-      <NavigationBar />
-    </div>
+    <MainLayout>
+      <div className="bg-blue-fade w-full h-56 rounded-lg"></div>
+    </MainLayout>
   );
 };

@@ -7,9 +7,11 @@ const sizeClassnames = {
 };
 
 const colorClassnames = {
-  primary: "bg-sky-400 border-2 border-transparent font-bold",
+  primary:
+    "bg-honeydew font-bold rounded-lg text-rich-black disabled:bg-opacity-30",
   secondary: "",
-  outline: "bg-transparent text-blue-lightest border-blue-lightest border",
+  outline:
+    "bg-transparent text-blue-lightest border-blue-lightest border disabled:text-opacity-30 disabled:border-opacity-30",
 };
 
 const iconClassname = "flex flex-row items-center justify-around";
@@ -21,7 +23,9 @@ type ButtonProps = DetailedHTMLProps<
   size?: keyof typeof sizeClassnames;
   color?: keyof typeof colorClassnames;
   loading?: boolean;
-  icon?: any;
+  icon?: JSX.Element;
+  rightIcon?: JSX.Element;
+  classNameOverride?: string;
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -29,8 +33,9 @@ export const Button: React.FC<ButtonProps> = ({
   size = "large",
   color = "primary",
   disabled = false,
-  className = "",
   icon,
+  rightIcon,
+  classNameOverride,
   ...props
 }) => {
   return (
@@ -38,11 +43,12 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       className={`${sizeClassnames[size]} ${colorClassnames[color]} ${
         icon ? iconClassname : null
-      } cursor-pointer`}
+      } cursor-pointer ${classNameOverride} disabled:cursor-default `}
       {...props}
     >
       {icon}
       {children}
+      {rightIcon}
     </button>
   );
 };
