@@ -54,6 +54,8 @@ contract Duel {
         require(sent, "failed to send remaining balance");
     }
 
+    // TODO: Make function ERC20 Token compatible
+    // msg.value = 1e18 means 1 MATIC
     function enterDuel(bytes32 _roomId) external payable {
         require(duelRooms[_roomId].length <= 2, "Room is full.");
         require(
