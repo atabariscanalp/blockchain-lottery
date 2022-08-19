@@ -21,10 +21,6 @@ type BinanceResponse struct {
 	Symbol string `json:"symbol"`
 }
 
-type OnlineUserResponse struct {
-	Counter json.Number `json:"counter"`
-}
-
 type Handler struct {
 	Redis *redis.Client
 	Rh    *rejson.Handler

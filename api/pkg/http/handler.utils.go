@@ -12,7 +12,6 @@ import (
 )
 
 // TODO: use url shortener to short user wallet id
-// TODO: set paths
 // TODO: capture errors
 
 func SaveGame(game *model.Game, handler *Handler) error {
