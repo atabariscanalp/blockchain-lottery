@@ -27,9 +27,17 @@ func (a *App) initializeDB() {
 	}
 	log.Println("successfully initialized redis db...")
 
+	mongoClient, err := db.InitMongo()
+	if err != nil {
+		return
+	}
+
+	log.Println("successfully initialized mongo db...")
+
 	a.HttpHandler = &httpPkg.Handler{
 		Redis: database.Redis,
 		Rh:    database.Rh,
+		Mongo: mongoClient.Client,
 	}
 }
 

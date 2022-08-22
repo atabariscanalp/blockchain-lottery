@@ -1,21 +1,30 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"github.com/atabariscanalp/blockchain-lottery/api/pkg/model"
 	userPkg "github.com/atabariscanalp/blockchain-lottery/api/pkg/user"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"io"
 	"log"
 	"net/http"
 	"time"
 )
 
+var ctx = context.Background()
+
 // TODO: use url shortener to short user wallet id
 // TODO: capture errors
 
 func SaveGame(game *model.Game, handler *Handler) error {
 	user := userPkg.Details{}
+	gamesCollection := handler.Mongo.Database("primary").Collection("games")
 
 	user1Exists, err := user.CheckIfExists(game.User1, handler.Redis)
 	if err != nil {
@@ -52,7 +61,7 @@ func SaveGame(game *model.Game, handler *Handler) error {
 		}
 
 		// append game to user games
-		user.SaveGame(game.User1, game, handler.Rh)
+		user.SaveGame(game.User1, game, handler.Rh, gamesCollection, true)
 	} else {
 		// user does not exist, so create a new one
 		user := userPkg.Details{}
@@ -106,7 +115,7 @@ func SaveGame(game *model.Game, handler *Handler) error {
 		}
 
 		// append game to user games
-		user.SaveGame(game.User2, game, handler.Rh)
+		user.SaveGame(game.User2, game, handler.Rh, gamesCollection, false)
 	} else {
 		// user does not exist, so create a new one
 		user := userPkg.Details{}
@@ -174,4 +183,74 @@ func WsReader(conn *websocket.Conn) {
 		}
 
 	}
+}
+
+func GetGamesFromCache(userId string, client *redis.Client) ([]byte, error) {
+	cmd := client.Do(ctx, "JSON.GET", userId, "$.games")
+	str, err := cmd.Text()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	data := []byte(str)
+	var arr [][]model.Game
+	err = json.Unmarshal(data, &arr)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if len(arr) == 0 {
+		return nil, errors.New("there is no game in cache")
+	}
+
+	return data, nil
+}
+
+func GetGamesFromDB(userId string, timestamp time.Time, client *mongo.Client) ([]byte, error) {
+	gamesCollection := client.Database("primary").Collection("games")
+
+	opts := options.Find().SetLimit(10).SetSort(bson.D{{"timestamp", -1}})
+	filter := bson.D{
+		{"$or", bson.A{
+			bson.D{{"user1", userId}},
+			bson.D{{"user2", userId}},
+		}},
+		{"timestamp", bson.D{
+			{"$lt", timestamp},
+		}},
+	}
+	cur, err := gamesCollection.Find(ctx, filter, opts)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var games []bson.M
+	err = cur.All(ctx, &games)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	data, err := json.Marshal(games)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func GetGameCountFromCache(userId string, client *redis.Client) ([]byte, error) {
+	cmd := client.Do(ctx, "JSON.GET", userId, "winCount", "loseCount")
+	str, err := cmd.Text()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	data := []byte(str)
+	return data, nil
 }

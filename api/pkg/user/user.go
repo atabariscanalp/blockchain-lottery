@@ -7,6 +7,7 @@ import (
 	"github.com/atabariscanalp/blockchain-lottery/api/pkg/model"
 	"github.com/go-redis/redis/v8"
 	"github.com/nitishm/go-rejson/v4"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 )
 
@@ -127,7 +128,10 @@ func (user *Details) AddLostTokens(userId string, betAmount float64, tokenType s
 	return
 }
 
-func (user *Details) SaveGame(userId string, game *model.Game, rh *rejson.Handler) {
+func (user *Details) SaveGame(userId string, game *model.Game, rh *rejson.Handler, gamesCollection *mongo.Collection, saveToMongo bool) {
+	/*
+		Save game to redis
+	*/
 	res, err := rh.JSONArrLen(userId, "$.games")
 	if err != nil {
 		log.Println(err)
@@ -151,6 +155,17 @@ func (user *Details) SaveGame(userId string, game *model.Game, rh *rejson.Handle
 		}
 
 		_, err = rh.JSONArrAppend(userId, "$.games", game)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	/*
+		Save game to mongo db
+	*/
+	if saveToMongo {
+		_, err = gamesCollection.InsertOne(ctx, game)
 		if err != nil {
 			log.Println(err)
 			return
