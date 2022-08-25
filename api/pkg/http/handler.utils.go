@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/atabariscanalp/blockchain-lottery/api/pkg/model"
 	userPkg "github.com/atabariscanalp/blockchain-lottery/api/pkg/user"
 	"github.com/go-redis/redis/v8"
@@ -66,16 +65,16 @@ func SaveGame(game *model.Game, handler *Handler) error {
 		// user does not exist, so create a new one
 		user := userPkg.Details{}
 
+		user.TokensWon = make(map[string]float64)
+		user.TokensLost = make(map[string]float64)
 		/*
 			if result is 0, user won the game
 		*/
 		if game.Result == 0 {
 			user.WinCount = 1
-			user.TokensWon = make(map[string]float64)
 			user.TokensWon[game.TokenType] = game.BetAmount * 1.9
 		} else {
 			user.LoseCount = 1
-			user.TokensLost = make(map[string]float64)
 			user.TokensLost[game.TokenType] = game.BetAmount
 		}
 
@@ -120,16 +119,16 @@ func SaveGame(game *model.Game, handler *Handler) error {
 		// user does not exist, so create a new one
 		user := userPkg.Details{}
 
+		user.TokensWon = make(map[string]float64)
+		user.TokensLost = make(map[string]float64)
 		/*
 			if result is 1, user won the game
 		*/
 		if game.Result == 1 {
 			user.WinCount = 1
-			user.TokensWon = make(map[string]float64)
 			user.TokensWon[game.TokenType] = game.BetAmount * 1.9
 		} else {
 			user.LoseCount = 1
-			user.TokensLost = make(map[string]float64)
 			user.TokensLost[game.TokenType] = game.BetAmount
 		}
 
@@ -185,8 +184,38 @@ func WsReader(conn *websocket.Conn) {
 	}
 }
 
+func OnlineUserCountReader(conn *websocket.Conn, client *redis.Client) {
+	sub := client.Subscribe(ctx, "user.activeCount")
+	str := client.Get(ctx, "activeUserAmount")
+	usrCount, err := str.Bytes()
+	if err != nil {
+		log.Println(err)
+		_ = conn.WriteMessage(1, []byte("0"))
+		return
+	}
+	err = conn.WriteMessage(1, usrCount)
+
+	for {
+		subMsg, err := sub.ReceiveMessage(ctx)
+		if err != nil {
+			log.Println(err)
+			_ = conn.Close()
+			return
+		}
+		err = conn.WriteMessage(1, []byte(subMsg.Payload))
+		if err != nil {
+			_ = conn.Close()
+			return
+		}
+	}
+}
+
 func GetGamesFromCache(userId string, client *redis.Client) ([]byte, error) {
 	cmd := client.Do(ctx, "JSON.GET", userId, "$.games")
+	val := cmd.Val()
+	if val == nil {
+		return []byte("[]"), nil
+	}
 	str, err := cmd.Text()
 	if err != nil {
 		log.Println(err)
@@ -194,17 +223,6 @@ func GetGamesFromCache(userId string, client *redis.Client) ([]byte, error) {
 	}
 
 	data := []byte(str)
-	var arr [][]model.Game
-	err = json.Unmarshal(data, &arr)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	if len(arr) == 0 {
-		return nil, errors.New("there is no game in cache")
-	}
-
 	return data, nil
 }
 
@@ -245,6 +263,30 @@ func GetGamesFromDB(userId string, timestamp time.Time, client *mongo.Client) ([
 
 func GetGameCountFromCache(userId string, client *redis.Client) ([]byte, error) {
 	cmd := client.Do(ctx, "JSON.GET", userId, "winCount", "loseCount")
+	str, err := cmd.Text()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	data := []byte(str)
+	return data, nil
+}
+
+func GetWonTokensFromCache(userId string, client *redis.Client) ([]byte, error) {
+	cmd := client.Do(ctx, "JSON.GET", userId, "tokensWon")
+	str, err := cmd.Text()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	data := []byte(str)
+	return data, nil
+}
+
+func GetLostTokensFromCache(userId string, client *redis.Client) ([]byte, error) {
+	cmd := client.Do(ctx, "JSON.GET", userId, "tokensLost")
 	str, err := cmd.Text()
 	if err != nil {
 		log.Println(err)

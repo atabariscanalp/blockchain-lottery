@@ -126,3 +126,76 @@ func (h *Handler) GetGameCountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) GetTokensWonHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	tokensWon, err := GetWonTokensFromCache(userId, h.Redis)
+	if err != nil {
+		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(tokensWon)
+	if err != nil {
+		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+}
+
+func (h *Handler) GetTokensLostHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	tokensWon, err := GetLostTokensFromCache(userId, h.Redis)
+	if err != nil {
+		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(tokensWon)
+	if err != nil {
+		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+}
+
+func (h *Handler) GetOnlineUserCountHandler(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	exists, err := h.Redis.Exists(ctx, "activeUserAmount").Result()
+	if err != nil {
+		log.Printf("error while checking if user exists -> %s", err.Error())
+		return
+	}
+
+	if exists == 0 {
+		h.Redis.Set(ctx, "activeUserAmount", 0, 0)
+	}
+
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+	}
+
+	OnlineUserCountReader(ws, h.Redis)
+}
+
+func (h *Handler) IncrementActiveUserHandler(w http.ResponseWriter, r *http.Request) {
+	client := h.Redis
+	count := client.Incr(ctx, "activeUserAmount").Val()
+	client.Publish(ctx, "user.activeCount", count)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) DecrementActiveUserHandler(w http.ResponseWriter, r *http.Request) {
+	client := h.Redis
+	count := client.Decr(ctx, "activeUserAmount").Val()
+	client.Publish(ctx, "user.activeCount", count)
+
+	w.WriteHeader(http.StatusOK)
+}

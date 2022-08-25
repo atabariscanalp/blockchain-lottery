@@ -107,18 +107,18 @@ func (user *Details) AddLostTokens(userId string, betAmount float64, tokenType s
 
 	if len(arr) > 0 {
 		// token exists in array
-		wonAmount := arr[0]
-		wonAmount += betAmount
+		lostAmount := arr[0]
+		lostAmount += betAmount
 		path := "$.tokensLost." + tokenType
-		_, err := rh.JSONSet(userId, path, wonAmount)
+		_, err := rh.JSONSet(userId, path, lostAmount)
 		if err != nil {
 			log.Println("error while setting won amount", err)
 			return
 		}
 	} else {
-		wonAmount := betAmount
+		lostAmount := betAmount
 		path := "$.tokensLost." + tokenType
-		_, err := rh.JSONSet(userId, path, wonAmount)
+		_, err := rh.JSONSet(userId, path, lostAmount)
 		if err != nil {
 			log.Println("error while setting won amount", err)
 			return

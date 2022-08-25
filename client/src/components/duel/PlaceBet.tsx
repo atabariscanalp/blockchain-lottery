@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MaticIcon } from "../../icons/Icons.svg";
 import { Button } from "../Button";
 import { useWeb3React } from "@web3-react/core";
@@ -9,7 +9,26 @@ type Props = {
 };
 
 export const PlaceBet: React.FC<Props> = ({ amount, setAmount }) => {
-  const amountInt = Number(amount || 1);
+  const amountInt = Number(amount || 0);
+
+  const [maticToUsdt, setMaticToUsdt] = useState(0);
+
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:8080/crypto/get-conversion")
+    ws.onopen = () => {
+      console.log("connected to websocket successfully")
+      ws.send("hello world")
+    }
+    ws.onmessage = (e) => {
+      const json = JSON.parse(e.data) as {price: string; symbol: string}
+
+      const conversionRate = Number(json.price)
+      setMaticToUsdt(conversionRate)
+      console.log("rate", conversionRate)
+    }
+
+    return () => ws.close()
+  }, [])
 
   const { account } = useWeb3React();
 
@@ -22,7 +41,7 @@ export const PlaceBet: React.FC<Props> = ({ amount, setAmount }) => {
               Bet amount
             </span>
             <span className="text-white opacity-20 text-lg font-semibold">
-              $25.00
+              ${(amountInt * maticToUsdt).toFixed(2)}
             </span>
           </div>
           <form className="bg-grey-fade rounded-lg flex flex-row items-center py-4 px-4 mb-4 w-full">
