@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { Query, sdk } from "../../api";
-import { useWeb3React } from "@web3-react/core";
+import React, { useEffect, useState } from 'react'
+import { Query, sdk } from '../../api'
+import { useWeb3React } from '@web3-react/core'
 
 export const GameCountComponent: React.FC = () => {
-
   type returnType = Awaited<ReturnType<typeof sdk.User.getGameCount>>
   const { fetch, data, error } = Query<returnType>(sdk.User.getGameCount)
 
@@ -16,20 +15,20 @@ export const GameCountComponent: React.FC = () => {
   }, [account])
 
   useEffect(() => {
-    console.log("error", error)
+    console.log('error', error)
   }, [error])
 
   return (
     <div
       className="bg-blue-fade rounded-lg flex flex-col px-4 pt-6 pb-3 items-center justify-between"
-      style={{ width: "26%" }}
+      style={{ width: '26%' }}
     >
       <div className="flex flex-col items-center">
         <p className="text-honeydew font-bold text-2xl mb-4">
           GAMES PLAYED
         </p>
         <div className="flex flex-row items-center self-center justify-around">
-          <span className="text-honeydew text-2xl font-semibold">{data ? (data.winCount + data.loseCount) : ""}</span>
+          <span className="text-honeydew text-2xl font-semibold">{(data != null) ? (data.winCount + data.loseCount) : ''}</span>
         </div>
       </div>
       <div className="flex flex-row items-center justify-around self-end justify-self-end w-1/2 px-1">

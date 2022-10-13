@@ -1,12 +1,11 @@
-import { SidebarIcon } from "./Sidebar.Icon";
+import { MemoizedSidebarIcon as SidebarIcon } from './Sidebar.Icon'
+import React from 'react'
 
-// fixed left-0 top-0 h-screen border-r-blue-light border-r-thin px-8 flex flex-col items-center justify-center
-
-export const Sidebar = () => {
+const Sidebar = () => {
   return (
     <div
       className={
-        "h-screen border-r-blue-light border-r-thin px-8 flex flex-col items-center justify-center"
+        'h-screen border-r-blue-light border-r-thin px-8 flex flex-col items-center justify-center'
       }
     >
       <SidebarIcon index={0} />
@@ -15,5 +14,7 @@ export const Sidebar = () => {
       <SidebarIcon index={3} />
       <SidebarIcon index={4} />
     </div>
-  );
-};
+  )
+}
+
+export const MemoizedSidebar = React.memo(Sidebar)

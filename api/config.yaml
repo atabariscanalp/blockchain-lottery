@@ -1,0 +1,14 @@
+# mongo
+MONGO_URI: "mongodb+srv://atabaris:5451051atabar@cluster0.77k4myz.mongodb.net/?retryWrites=true&w=majority"
+
+# redis
+REDIS_ADDR: "localhost:6380"
+REDIS_PASSWORD: ""
+REDIS_DB_INDEX: 0
+
+# channel names
+CHANNEL_ROOMS: "rooms"
+CHANNEL_ROOMS_JOIN: "rooms.join"
+
+# cache keys
+KEY_ROOMS: "rooms"

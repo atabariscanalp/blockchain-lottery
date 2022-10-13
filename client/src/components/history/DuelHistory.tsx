@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { DummyHistoryData } from "../../dummy-data/History.data";
-import { MaticIcon } from "../../icons/Icons.svg";
-import { walletAddressParser } from "../../utils/web3/web3.util";
-import { Query, sdk } from "../../api";
-import { useWeb3React } from "@web3-react/core";
-import { Locked } from "../Locked";
+import React, { useEffect, useState } from 'react'
+import { MaticIcon } from '../../icons/Icons.svg'
+import { walletAddressParser } from '../../utils/web3/web3.util'
+import { Query, sdk } from '../../api'
+import { useWeb3React } from '@web3-react/core'
+import { MemoizedLocked as Locked } from '../Locked'
 
 export const DuelHistory = () => {
   type returnType = Awaited<ReturnType<typeof sdk.User.getGames>>
@@ -20,9 +19,9 @@ export const DuelHistory = () => {
 
   const checkGameResult = (result: number, user1: string) => {
     if (user1 === account) {
-      return result === 0 ? "WON" : "LOST"
+      return result === 0 ? 'WON' : 'LOST'
     }
-    return result === 1 ? "WON" : "LOST"
+    return result === 1 ? 'WON' : 'LOST'
   }
 
   useEffect(() => {
@@ -32,19 +31,19 @@ export const DuelHistory = () => {
   }, [])
 
   useEffect(() => {
-    if (gameCountData) {
+    if (gameCountData != null) {
       const gameCount = gameCountData.loseCount + gameCountData.winCount
     }
   }, [gameCountData])
 
   useEffect(() => {
     if (account) {
-      fetch({ userId: account, timestamp: "now" })
+      fetch({ userId: account, timestamp: 'now' })
     }
   }, [account])
 
   useEffect(() => {
-    console.log("error", error)
+    console.log('error', error)
   }, [error])
 
   return (
@@ -57,8 +56,8 @@ export const DuelHistory = () => {
         <div className="w-1/4 flex items-center justify-center">Result</div>
         <div className="w-1/4 flex items-center justify-center">Bet Amount</div>
       </div>
-      {data && data.map((game) => (
-        <div className="flex flex-row w-full items-center mb-4">
+      {data?.map((game) => (
+        <div className="flex flex-row w-full items-center mb-4" key={game.id}>
           <div className="flex items-center justify-center w-1/4">
             <div className="flex items-center justify-center rounded-lg py-2 px-4 bg-blue-fade-bold text-honeydew">
               {walletAddressParser(game.user1)}
@@ -70,7 +69,7 @@ export const DuelHistory = () => {
             </div>
           </div>
           <div className="flex items-center justify-center w-1/4">
-            <div className={`flex items-center justify-center text-honeydew font-bold text-lg rounded-lg px-4 py-2 ${checkGameResult(game.result, game.user1) === "WON" ? "bg-green" : "bg-red"}`}>
+            <div className={`flex items-center justify-center text-honeydew font-bold text-lg rounded-lg px-4 py-2 ${checkGameResult(game.result, game.user1) === 'WON' ? 'bg-green' : 'bg-red'}`}>
               {checkGameResult(game.result, game.user1)}
             </div>
           </div>
@@ -84,5 +83,5 @@ export const DuelHistory = () => {
       ))}
       <span className="self-center text-honeydew font-semibold text-xl mt-4">1 2...96</span>
     </Locked>
-  );
-};
+  )
+}

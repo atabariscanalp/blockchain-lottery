@@ -1,72 +1,72 @@
-import React from "react";
+import React from 'react'
 import {
   CoinbaseWalletIcon,
   MetamaskIcon,
-  WalletConnectIcon,
-} from "../icons/Icons.svg";
+  WalletConnectIcon
+} from '../icons/Icons.svg'
 import {
   coinbaseWallet,
   metaMask,
-  walletConnect,
-} from "../utils/web3/connectors";
+  walletConnect
+} from '../utils/web3/connectors'
 
-type Wallets = "metamask" | "coinbase" | "walletconnect";
-type Props = {
-  option: Wallets;
-};
-const ICON_SIZE = 30;
+type Wallets = 'metamask' | 'coinbase' | 'walletconnect'
+interface Props {
+  option: Wallets
+}
+const ICON_SIZE = 30
 
 export const WalletOption: React.FC<Props> = ({ option }) => {
   const connectMetamask = async () => {
     try {
-      await metaMask.activate();
+      await metaMask.activate()
     } catch (error: any) {
-      console.error(error.code);
+      console.error(error.code)
 
       // user rejected connecting wallet
       if (error.code === 4001) {
-        console.log("resetting");
-        if (metaMask.deactivate) {
-          await metaMask.deactivate();
+        console.log('resetting')
+        if (metaMask.deactivate != null) {
+          await metaMask.deactivate()
         } else {
-          await metaMask.resetState();
+          await metaMask.resetState()
         }
-        await metaMask.activate();
-        console.log("is metamask", metaMask.provider?.isMetaMask);
-        // @ts-ignore
-        console.log("is connected", metaMask.provider?.isConnected());
+        await metaMask.activate()
+        console.log('is metamask', metaMask.provider?.isMetaMask)
+        // @ts-expect-error
+        console.log('is connected', metaMask.provider?.isConnected())
         console.log(
-          "is metamask",
-          metaMask.provider?.on("4001", () => console.log("4001 happened"))
-        );
-        //metaMask.provider = undefined;
+          'is metamask',
+          metaMask.provider?.on('4001', () => console.log('4001 happened'))
+        )
+        // metaMask.provider = undefined;
       }
     }
-  };
+  }
   const connectCoinbase = () => {
-    void coinbaseWallet.activate();
-  };
+    void coinbaseWallet.activate()
+  }
   const connectWalletConnect = () => {
-    void walletConnect.activate();
-  };
+    void walletConnect.activate()
+  }
 
   const wallets: Record<Wallets, any> = {
     metamask: {
       icon: <MetamaskIcon width={ICON_SIZE} height={ICON_SIZE} />,
-      name: "Metamask",
-      onClick: () => connectMetamask(),
+      name: 'Metamask',
+      onClick: async () => await connectMetamask()
     },
     walletconnect: {
       icon: <WalletConnectIcon width={ICON_SIZE} height={ICON_SIZE} />,
-      name: "WalletConnect",
-      onClick: () => connectWalletConnect(),
+      name: 'WalletConnect',
+      onClick: () => connectWalletConnect()
     },
     coinbase: {
       icon: <CoinbaseWalletIcon width={ICON_SIZE} height={ICON_SIZE} />,
-      name: "Coinbase",
-      onClick: () => connectCoinbase(),
-    },
-  };
+      name: 'Coinbase',
+      onClick: () => connectCoinbase()
+    }
+  }
 
   return (
     <div
@@ -80,5 +80,5 @@ export const WalletOption: React.FC<Props> = ({ option }) => {
         {wallets[option].name}
       </span>
     </div>
-  );
-};
+  )
+}

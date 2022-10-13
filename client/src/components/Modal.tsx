@@ -1,20 +1,18 @@
-import React, { useRef } from "react";
-import { useModalContext } from "../utils/context";
-import { WalletOption } from "./WalletOption";
+import React, { useRef } from 'react'
+import { useModalContext } from '../utils/context'
+import { WalletOption } from './WalletOption'
 
-interface ModalProps {}
+export const Modal: React.FC = () => {
+  const { isOpen, setIsOpen } = useModalContext()
 
-export const Modal: React.FC<ModalProps> = () => {
-  const { isOpen, setIsOpen } = useModalContext();
-
-  const bgRef = useRef<HTMLDivElement | null>(null);
+  const bgRef = useRef<HTMLDivElement | null>(null)
 
   const closeModal = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (bgRef.current === e.target) setIsOpen(false);
-  };
+    if (bgRef.current === e.target) setIsOpen(false)
+  }
 
   if (!isOpen) {
-    return null;
+    return null
   }
 
   return (
@@ -35,5 +33,5 @@ export const Modal: React.FC<ModalProps> = () => {
         <WalletOption option="walletconnect" />
       </div>
     </div>
-  );
-};
+  )
+}

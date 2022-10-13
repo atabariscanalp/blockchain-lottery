@@ -1,35 +1,25 @@
 package http
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/atabariscanalp/blockchain-lottery/api/pkg/model"
-	userPkg "github.com/atabariscanalp/blockchain-lottery/api/pkg/user"
-	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/spf13/viper"
 	"io"
 	"log"
 	"net/http"
 	"time"
 )
 
-var ctx = context.Background()
-
 // TODO: use url shortener to short user wallet id
 // TODO: capture errors
 
-func SaveGame(game *model.Game, handler *Handler) error {
-	user := userPkg.Details{}
-	gamesCollection := handler.Mongo.Database("primary").Collection("games")
+var ctx = model.Ctx
 
-	user1Exists, err := user.CheckIfExists(game.User1, handler.Redis)
-	if err != nil {
-		return err
-	}
-	user2Exists, err := user.CheckIfExists(game.User2, handler.Redis)
+func SaveGame(game *model.Game, h *Handler) error {
+	user1Exists, err := h.DBSvc.CheckIfKeyExistsInCache(game.User1)
+	user2Exists, err := h.DBSvc.CheckIfKeyExistsInCache(game.User2)
 	if err != nil {
 		return err
 	}
@@ -41,47 +31,47 @@ func SaveGame(game *model.Game, handler *Handler) error {
 		*/
 		if game.Result == 0 {
 			// increment gameWon value by 1
-			err = user.IncrementWonGame(game.User1, handler.Rh)
+			err = h.DBSvc.IncrementWonGame(game.User1)
 			if err != nil {
 				return err
 			}
 
 			// increment tokensWon by won amount
-			user.AddWonTokens(game.User1, game.BetAmount, game.TokenType, handler.Rh, handler.Redis)
+			h.DBSvc.AddWonTokens(game.User1, game.BetAmount, game.TokenType)
 		} else {
 			// increment lost game count by 1
-			err = user.IncrementLostGame(game.User1, handler.Rh)
+			err = h.DBSvc.IncrementLostGame(game.User1)
 			if err != nil {
 				return err
 			}
 
 			// increment tokensLost by lost amount
-			user.AddLostTokens(game.User1, game.BetAmount, game.TokenType, handler.Rh, handler.Redis)
+			h.DBSvc.AddLostTokens(game.User1, game.BetAmount, game.TokenType)
 		}
 
 		// append game to user games
-		user.SaveGame(game.User1, game, handler.Rh, gamesCollection, true)
+		h.DBSvc.SaveGame(game.User1, game, true)
 	} else {
 		// user does not exist, so create a new one
-		user := userPkg.Details{}
+		user := model.User{}
 
-		user.TokensWon = make(map[string]float64)
-		user.TokensLost = make(map[string]float64)
+		user.History.TokensWon = make(map[string]float64)
+		user.History.TokensLost = make(map[string]float64)
 		/*
 			if result is 0, user won the game
 		*/
 		if game.Result == 0 {
-			user.WinCount = 1
-			user.TokensWon[game.TokenType] = game.BetAmount * 1.9
+			user.History.WinCount = 1
+			user.History.TokensWon[game.TokenType] = game.BetAmount * 1.9
 		} else {
-			user.LoseCount = 1
-			user.TokensLost[game.TokenType] = game.BetAmount
+			user.History.LoseCount = 1
+			user.History.TokensLost[game.TokenType] = game.BetAmount
 		}
 
 		// append game to user games
-		user.Games = append(user.Games, game)
+		user.History.Games = append(user.History.Games, game)
 
-		_, err := handler.Rh.JSONSet(game.User1, "$", user)
+		_, err := h.DBSvc.SetJSONInCache(game.User1, "$", user)
 		if err != nil {
 			log.Println("error while json setting user1 info")
 			return err
@@ -95,47 +85,47 @@ func SaveGame(game *model.Game, handler *Handler) error {
 		*/
 		if game.Result == 1 {
 			// increment gameWon value by 1
-			err = user.IncrementWonGame(game.User2, handler.Rh)
+			err = h.DBSvc.IncrementWonGame(game.User2)
 			if err != nil {
 				return err
 			}
 
 			// increment tokensWon by won amount
-			user.AddWonTokens(game.User2, game.BetAmount, game.TokenType, handler.Rh, handler.Redis)
+			h.DBSvc.AddWonTokens(game.User2, game.BetAmount, game.TokenType)
 		} else {
 			// increment lost game count by 1
-			err = user.IncrementLostGame(game.User2, handler.Rh)
+			err = h.DBSvc.IncrementLostGame(game.User2)
 			if err != nil {
 				return err
 			}
 
 			// increment tokensLost by lost amount
-			user.AddLostTokens(game.User2, game.BetAmount, game.TokenType, handler.Rh, handler.Redis)
+			h.DBSvc.AddLostTokens(game.User2, game.BetAmount, game.TokenType)
 		}
 
 		// append game to user games
-		user.SaveGame(game.User2, game, handler.Rh, gamesCollection, false)
+		h.DBSvc.SaveGame(game.User2, game, false)
 	} else {
 		// user does not exist, so create a new one
-		user := userPkg.Details{}
+		user := model.User{}
 
-		user.TokensWon = make(map[string]float64)
-		user.TokensLost = make(map[string]float64)
+		user.History.TokensWon = make(map[string]float64)
+		user.History.TokensLost = make(map[string]float64)
 		/*
 			if result is 1, user won the game
 		*/
 		if game.Result == 1 {
-			user.WinCount = 1
-			user.TokensWon[game.TokenType] = game.BetAmount * 1.9
+			user.History.WinCount = 1
+			user.History.TokensWon[game.TokenType] = game.BetAmount * 1.9 // TODO: think about overflow
 		} else {
-			user.LoseCount = 1
-			user.TokensLost[game.TokenType] = game.BetAmount
+			user.History.LoseCount = 1
+			user.History.TokensLost[game.TokenType] = game.BetAmount
 		}
 
 		// append game to user games
-		user.Games = append(user.Games, game)
+		user.History.Games = append(user.History.Games, game)
 
-		_, err := handler.Rh.JSONSet(game.User2, "$", user)
+		_, err := h.DBSvc.SetJSONInCache(game.User2, "$", user)
 		if err != nil {
 			log.Println("error while setting json user2 info")
 			return err
@@ -145,14 +135,8 @@ func SaveGame(game *model.Game, handler *Handler) error {
 	return nil
 }
 
-func WsReader(conn *websocket.Conn) {
+func CurrencyConversionReader(conn *websocket.Conn) {
 	for {
-		_, _, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
 		// send request every x seconds
 		for range time.Tick(time.Second * 3) {
 			// request MATIC/USDT rate from binance api
@@ -184,9 +168,9 @@ func WsReader(conn *websocket.Conn) {
 	}
 }
 
-func OnlineUserCountReader(conn *websocket.Conn, client *redis.Client) {
-	sub := client.Subscribe(ctx, "user.activeCount")
-	str := client.Get(ctx, "activeUserAmount")
+func OnlineUserCountReader(conn *websocket.Conn, h *Handler) {
+	sub := h.DBSvc.SubscribeToPubSubChannel("user.activeCount")
+	str := h.DBSvc.GetValueFromCache("activeUserAmount")
 	usrCount, err := str.Bytes()
 	if err != nil {
 		log.Println(err)
@@ -210,89 +194,105 @@ func OnlineUserCountReader(conn *websocket.Conn, client *redis.Client) {
 	}
 }
 
-func GetGamesFromCache(userId string, client *redis.Client) ([]byte, error) {
-	cmd := client.Do(ctx, "JSON.GET", userId, "$.games")
-	val := cmd.Val()
-	if val == nil {
-		return []byte("[]"), nil
-	}
-	str, err := cmd.Text()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
+func GetRoomsUpdatedAtReader(conn *websocket.Conn, h *Handler) {
+	// check cache every second for new room entries
+	for range time.Tick(time.Second * 3) {
+		updatedAt, err := h.DBSvc.GetRoomsUpdatedAtFromCache()
 
-	data := []byte(str)
-	return data, nil
+		err = conn.WriteMessage(1, updatedAt)
+		if err != nil {
+			_ = conn.Close()
+			return
+		}
+	}
 }
 
-func GetGamesFromDB(userId string, timestamp time.Time, client *mongo.Client) ([]byte, error) {
-	gamesCollection := client.Database("primary").Collection("games")
+func CreateRoomReader(conn *websocket.Conn, h *Handler) {
+	var room model.Room
+	err := conn.ReadJSON(&room)
 
-	opts := options.Find().SetLimit(10).SetSort(bson.D{{"timestamp", -1}})
-	filter := bson.D{
-		{"$or", bson.A{
-			bson.D{{"user1", userId}},
-			bson.D{{"user2", userId}},
-		}},
-		{"timestamp", bson.D{
-			{"$lt", timestamp},
-		}},
+	id := room.ID.ID()
+	if id != 0 {
+		keyRooms := viper.GetString("KEY_ROOMS")
+		channelRoomsJoin := viper.GetString("CHANNEL_ROOMS_JOIN")
+
+		log.Println("create room-->", room)
+
+		// save room to cache
+		path := "$.data." + room.ID.String()
+		_, err = h.DBSvc.SetJSONInCache(keyRooms, path, room)
+		if err != nil {
+			log.Println(err)
+			_ = conn.Close()
+			return
+		}
+		log.Println("successfully saved room to cache", room.ID)
+
+		// update "updatedAt"
+		path = "$.updatedAt"
+		now := time.Now().UTC()
+		_, err = h.DBSvc.SetJSONInCache(keyRooms, path, now)
+		if err != nil {
+			log.Println(err)
+			_ = conn.Close()
+			return
+		}
+		log.Println("successfully updated 'updatedAt'")
+
+		val, ok := <-h.RoomChan
+		if ok {
+			log.Println("val", val)
+		}
+
+		sub := h.DBSvc.SubscribeToPubSubChannel(channelRoomsJoin + "aa")
+		log.Println("subscribed to games.challenge-request")
+
+		type gameStatus struct {
+			status string
+		}
+		var status gameStatus
+		err := conn.ReadJSON(&status)
+		if err != nil {
+			log.Println(err)
+			_ = conn.Close()
+		}
+
+		if len(status.status) > 0 {
+			log.Println("status", status.status)
+		}
+
+		log.Println("waiting for sub to receive messages...")
+
+		for {
+			_, err := sub.ReceiveMessage(ctx)
+			// get message as json obj
+			iface, err := sub.Receive(ctx)
+			if err != nil {
+				log.Println(err)
+				_ = conn.Close()
+				return
+			}
+
+			log.Println("received a message", iface)
+
+			type Msg struct {
+				roomId uuid.UUID
+				userId string
+			}
+			msg, ok := iface.(*Msg)
+
+			log.Println("ok", ok)
+
+			if msg.roomId == room.ID {
+				bytes, err := json.Marshal(msg)
+				err = conn.WriteMessage(1, bytes)
+				if err != nil {
+					log.Println(err)
+					_ = conn.Close()
+					return
+				}
+				break
+			}
+		}
 	}
-	cur, err := gamesCollection.Find(ctx, filter, opts)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	var games []bson.M
-	err = cur.All(ctx, &games)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	data, err := json.Marshal(games)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func GetGameCountFromCache(userId string, client *redis.Client) ([]byte, error) {
-	cmd := client.Do(ctx, "JSON.GET", userId, "winCount", "loseCount")
-	str, err := cmd.Text()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	data := []byte(str)
-	return data, nil
-}
-
-func GetWonTokensFromCache(userId string, client *redis.Client) ([]byte, error) {
-	cmd := client.Do(ctx, "JSON.GET", userId, "tokensWon")
-	str, err := cmd.Text()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	data := []byte(str)
-	return data, nil
-}
-
-func GetLostTokensFromCache(userId string, client *redis.Client) ([]byte, error) {
-	cmd := client.Do(ctx, "JSON.GET", userId, "tokensLost")
-	str, err := cmd.Text()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	data := []byte(str)
-	return data, nil
 }

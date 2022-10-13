@@ -1,15 +1,15 @@
 import { AxiosPromise } from 'axios'
-import { useState } from "react";
+import { useCallback, useState } from 'react'
 
 type queryProp = (data: any) => AxiosPromise | Promise<any>
 
-export default function Query<T>(query: queryProp) {
+export default function Query<T> (query: queryProp) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null as any)
   const [didFetch, setDidFetch] = useState(false)
-  const [data, setData] = useState<T|null>(null)
+  const [data, setData] = useState<T | null>(null)
 
-  const fetch = async (data?: Parameters<typeof query>[0]) => {
+  const fetch = useCallback(async (data?: Parameters<typeof query>[0]) => {
     setData(null)
     setError(null)
     setLoading(true)
@@ -31,7 +31,7 @@ export default function Query<T>(query: queryProp) {
       throw error
     }
     return response
-  }
+  }, [error, query])
 
   const resetState = () => {
     setData(null)
@@ -46,6 +46,6 @@ export default function Query<T>(query: queryProp) {
     loading,
     error,
     didFetch,
-    data,
+    data
   }
 }

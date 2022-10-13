@@ -1,15 +1,14 @@
-import React from "react";
+import React from 'react'
 
-type Props = {
+interface Props {
   title: string
 }
 
 export const HistoryDetails: React.FC<Props> = ({ children, title }) => {
-
   return (
     <div
       className="bg-blue-fade rounded-lg flex flex-col px-4 pt-6 pb-3 items-center justify-between"
-      style={{ width: "26%" }}
+      style={{ width: '26%' }}
     >
       <div className="flex flex-col items-center">
         <p className="text-honeydew font-bold text-2xl mb-4">

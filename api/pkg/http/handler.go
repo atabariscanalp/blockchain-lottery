@@ -3,11 +3,8 @@ package http
 import (
 	"encoding/json"
 	"github.com/atabariscanalp/blockchain-lottery/api/pkg/model"
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/nitishm/go-rejson/v4"
-	"go.mongodb.org/mongo-driver/mongo"
 	"io"
 	"log"
 	"net/http"
@@ -25,9 +22,8 @@ type BinanceResponse struct {
 }
 
 type Handler struct {
-	Redis *redis.Client
-	Rh    *rejson.Handler
-	Mongo *mongo.Client
+	DBSvc    model.DBService
+	RoomChan chan string
 }
 
 func (h *Handler) ConversionHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +34,9 @@ func (h *Handler) ConversionHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	WsReader(ws)
+	defer ws.Close()
+
+	CurrencyConversionReader(ws)
 }
 
 func (h *Handler) SaveGameHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +70,7 @@ func (h *Handler) GetGameHandler(w http.ResponseWriter, r *http.Request) {
 	userId := vars["userId"]
 
 	if timestamp == "now" {
-		games, err := GetGamesFromCache(userId, h.Redis)
+		games, err := h.DBSvc.GetGamesFromCache(userId)
 		if err != nil {
 			w.WriteHeader(http.StatusSeeOther)
 			return
@@ -92,7 +90,7 @@ func (h *Handler) GetGameHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		games, err := GetGamesFromDB(userId, ts, h.Mongo)
+		games, err := h.DBSvc.GetGamesFromDB(userId, ts)
 		if err != nil {
 			w.WriteHeader(http.StatusSeeOther)
 			return
@@ -113,11 +111,7 @@ func (h *Handler) GetGameCountHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userId := vars["userId"]
 
-	gameCount, err := GetGameCountFromCache(userId, h.Redis)
-	if err != nil {
-		w.WriteHeader(http.StatusSeeOther)
-		return
-	}
+	gameCount, err := h.DBSvc.GetUserGameCountFromCache(userId)
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(gameCount)
@@ -131,16 +125,12 @@ func (h *Handler) GetTokensWonHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userId := vars["userId"]
 
-	tokensWon, err := GetWonTokensFromCache(userId, h.Redis)
-	if err != nil {
-		w.WriteHeader(http.StatusSeeOther)
-		return
-	}
+	tokensWon, err := h.DBSvc.GetWonTokensFromCache(userId)
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(tokensWon)
 	if err != nil {
-		w.WriteHeader(http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
@@ -149,14 +139,14 @@ func (h *Handler) GetTokensLostHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userId := vars["userId"]
 
-	tokensWon, err := GetLostTokensFromCache(userId, h.Redis)
+	tokensLost, err := h.DBSvc.GetLostTokensFromCache(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(tokensWon)
+	_, err = w.Write(tokensLost)
 	if err != nil {
 		w.WriteHeader(http.StatusSeeOther)
 		return
@@ -166,14 +156,15 @@ func (h *Handler) GetTokensLostHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetOnlineUserCountHandler(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
-	exists, err := h.Redis.Exists(ctx, "activeUserAmount").Result()
+	exists, err := h.DBSvc.CheckIfKeyExistsInCache("activeUserAmount")
 	if err != nil {
 		log.Printf("error while checking if user exists -> %s", err.Error())
 		return
 	}
 
-	if exists == 0 {
-		h.Redis.Set(ctx, "activeUserAmount", 0, 0)
+	// TODO: error handle
+	if !exists {
+		h.DBSvc.SetValueInCache("activeUserAmount", 0)
 	}
 
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -181,21 +172,90 @@ func (h *Handler) GetOnlineUserCountHandler(w http.ResponseWriter, r *http.Reque
 		log.Println(err)
 	}
 
-	OnlineUserCountReader(ws, h.Redis)
+	defer ws.Close()
+
+	OnlineUserCountReader(ws, h)
 }
 
 func (h *Handler) IncrementActiveUserHandler(w http.ResponseWriter, r *http.Request) {
-	client := h.Redis
-	count := client.Incr(ctx, "activeUserAmount").Val()
-	client.Publish(ctx, "user.activeCount", count)
+	count := h.DBSvc.IncrementValueInCache("activeUserAmount").Val()
+	h.DBSvc.PublishToPubSubChannel("user.activeCount", count)
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) DecrementActiveUserHandler(w http.ResponseWriter, r *http.Request) {
-	client := h.Redis
-	count := client.Decr(ctx, "activeUserAmount").Val()
-	client.Publish(ctx, "user.activeCount", count)
+	count := h.DBSvc.DecrementValueInCache("activeUserAmount")
+	h.DBSvc.PublishToPubSubChannel("user.activeCount", count)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+	}
+
+	defer ws.Close()
+
+	CreateRoomReader(ws, h)
+}
+
+func (h *Handler) GetRoomsHandler(w http.ResponseWriter, r *http.Request) {
+	rooms, err := h.DBSvc.GetRoomsFromCache()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(rooms)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) GetRoomsUpdatedAtHandler(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+	}
+
+	defer ws.Close()
+
+	GetRoomsUpdatedAtReader(ws, h)
+}
+
+func (h *Handler) JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	type request struct {
+		roomId string
+		userId string
+	}
+	var data *request
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	path := "activeGames." + data.roomId + ".user2"
+	h.DBSvc.SetValueInCache(path, data.userId)
+
+	h.RoomChan <- data.roomId
+
+	// publish gameId to challenge request channel
+	// h.DBSvc.PublishToPubSubChannel("games.challenge-request", body)
 
 	w.WriteHeader(http.StatusOK)
 }

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -15,7 +16,8 @@ type mongoDB struct {
 
 func InitMongo() (*mongoDB, error) {
 	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://atabaris:5451051atabar@cluster0.77k4myz.mongodb.net/?retryWrites=true&w=majority").SetServerAPIOptions(serverAPIOptions)
+	mongoUri := viper.GetString("MONGO_URI")
+	clientOptions := options.Client().ApplyURI(mongoUri).SetServerAPIOptions(serverAPIOptions)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, clientOptions)

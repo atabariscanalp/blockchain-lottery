@@ -1,16 +1,16 @@
-import React from "react";
-import { Sidebar } from "./sidebar/Sidebar";
-import { NavigationBar } from "./NavigationBar";
-import { Modal } from "./Modal";
-import { useModalContext } from "../utils/context";
+import React from 'react'
+import { MemoizedSidebar as Sidebar } from './sidebar/Sidebar'
+import { MemoizedNavigationBar as NavigationBar } from './NavigationBar'
+import { Modal } from './Modal'
+import { useModalContext } from '../utils/context'
 
 export const MainLayout: React.FC = ({ children }) => {
-  const { isOpen } = useModalContext();
+  const { isOpen } = useModalContext()
 
   return (
     <div
       className={`bg-rich-black w-screen h-screen flex fixed ${
-        isOpen ? "bg-rich-black" : "bg-rich-black"
+        isOpen ? 'bg-rich-black' : 'bg-rich-black'
       }`}
     >
       <Modal />
@@ -20,5 +20,5 @@ export const MainLayout: React.FC = ({ children }) => {
         {children}
       </div>
     </div>
-  );
-};
+  )
+}

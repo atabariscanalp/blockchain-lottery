@@ -1,15 +1,15 @@
-import React from "react";
-import { MaticIcon } from "../../../icons/Icons.svg";
+import React from 'react'
+import { MaticIcon } from '../../../icons/Icons.svg'
 
-type Props = {
+interface Props {
   tokenType: string
   value: number
 }
 
 export const TokensList: React.FC<Props> = ({ tokenType, value }) => {
   const tokenKeys: Record<string, any> = {
-    "MATIC": <MaticIcon width={30} height={30} />,
-    "ETH": <MaticIcon width={30} height={30} />,
+    MATIC: <MaticIcon width={30} height={30} />,
+    ETH: <MaticIcon width={30} height={30} />
   }
 
   return (
